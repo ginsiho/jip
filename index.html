@@ -1,0 +1,3551 @@
+
+
+
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  />
+  <title>home</title>
+
+  <style>
+    
+@font-face {
+  font-family: "FontA";
+  src: url("./fonts/OnulSusa60-Regular.otf") format("opentype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "FontB";
+  src: url("./fonts/OnulDDot-D01.otf") format("opentype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "FontC";
+  src: url("./fonts/OnulDaisy12-Regular.otf") format("opentype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "FontD";
+  src: url("./fonts/OnulHanChe-Light.otf") format("opentype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+
+    * {
+      box-sizing: border-box;
+    }
+
+    :root {
+      --text-color: #242321;
+    }
+
+    html,
+    body {
+      margin: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+    }
+
+    body {
+  font-family:
+    var(--site-font, "FontA"),
+    "Apple SD Gothic Neo",
+    sans-serif;
+
+  color: var(--text-color);
+  background: #d8c6ab;
+}
+
+    button,
+    textarea,
+    input {
+      font: inherit;
+      color: inherit;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+   
+    .scene {
+      position: relative;
+      width: 100%;
+      height: 100vh;
+      height: 100svh;
+      overflow: hidden;
+      background: var(--room-color, #d8c6ab);
+      isolation: isolate;
+    }
+
+    .room-image {
+      position: absolute;
+      inset: 0;
+      z-index: 0;
+      background-position: center;
+      background-size: cover;
+      pointer-events: none;
+    }
+
+   
+    .image-viewport {
+      position: absolute;
+      inset: 0;
+      z-index: 1;
+      overflow: hidden;
+      pointer-events: none;
+    }
+
+    .image-world {
+      position: absolute;
+      inset: 0;
+      transform-origin: 0 0;
+    }
+
+    .jamo-tile {
+      position: absolute;
+      overflow: visible;
+    }
+
+    .jamo-tile img,
+    .jamo-tile canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      display: block;
+      max-width: none;
+      max-height: none;
+      transform-origin: 0 0;
+      user-select: none;
+      -webkit-user-drag: none;
+    }
+
+    .jamo-tile canvas {
+      image-rendering: pixelated;
+    }
+
+    .fallback {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      height: 100%;
+      font-size: 60px;
+      line-height: 1;
+      transform-origin: 0 0;
+    }
+
+   
+    .jamo-motion {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      transform-origin: center bottom;
+      overflow: visible;
+    }
+
+    .jamo-motion.elastic-enter {
+      animation:
+        elastic-rubber 760ms cubic-bezier(0.2, 0.95, 0.25, 1) both;
+      will-change: transform;
+    }
+
+    @keyframes elastic-rubber {
+      0% {
+        transform:
+          rotate(var(--tilt, 0deg))
+          scale(var(--stretch-x, 1), var(--stretch-y, 1));
+      }
+
+      18% {
+        transform:
+          rotate(calc(var(--tilt, 0deg) * -0.72))
+          scale(
+            calc(1 - (var(--stretch-x, 1) - 1) * 0.78),
+            calc(1 + (1 - var(--stretch-y, 1)) * 0.70)
+          );
+      }
+
+      42% {
+        transform:
+          rotate(calc(var(--tilt, 0deg) * 0.34))
+          scale(
+            calc(1 + (var(--stretch-x, 1) - 1) * 0.36),
+            calc(1 - (1 - var(--stretch-y, 1)) * 0.24)
+          );
+      }
+
+      68% {
+        transform:
+          rotate(calc(var(--tilt, 0deg) * -0.14))
+          scale(
+            calc(1 - (var(--stretch-x, 1) - 1) * 0.12),
+            calc(1 + (1 - var(--stretch-y, 1)) * 0.08)
+          );
+      }
+
+      100% {
+        transform:
+          rotate(var(--rest-tilt, 0deg))
+          scale(1, 1);
+      }
+    }
+
+  
+    .navigation {
+      position: absolute;
+      inset: 0;
+      z-index: 3;
+      pointer-events: none;
+    }
+
+    .nav-text {
+      position: absolute;
+      margin: 0;
+      padding: 4px 4px;
+      border: 0;
+      border-radius: 0;
+      background: #ff146a;
+      color: #ffffff;
+      font-size: clamp(16px, 2vw, 22px);
+      font-weight: 400;
+      line-height: 1;
+      white-space: nowrap;
+      cursor: pointer;
+      pointer-events: auto;
+    }
+
+    .nav-text:focus-visible {
+      outline: 1px dashed currentColor;
+      outline-offset: 2px;
+    }
+
+    .position-top {
+      top: calc(24px + env(safe-area-inset-top, 0px));
+      left: 50%;
+      transform: translateX(-50%);
+    }
+
+    .position-left {
+      top: 50%;
+      left: calc(24px + env(safe-area-inset-left, 0px));
+      transform: translateY(-50%);
+    }
+
+    .position-right {
+      top: 50%;
+      right: calc(24px + env(safe-area-inset-right, 0px));
+      transform: translateY(-50%);
+    }
+
+    .position-bottom {
+      bottom: calc(24px + env(safe-area-inset-bottom, 0px));
+      left: 50%;
+      transform: translateX(-50%);
+    }
+
+    .position-center {
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: clamp(22px, 3vw, 34px);
+    }
+
+    .position-top-right {
+      top: calc(24px + env(safe-area-inset-top, 0px));
+      right: calc(24px + env(safe-area-inset-right, 0px));
+    }
+
+    .ime-input {
+      position: absolute;
+      bottom: 80px;
+      left: 50%;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      border: 0;
+      opacity: 0;
+      overflow: hidden;
+      font-size: 16px;
+      pointer-events: none;
+    }
+
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      margin: -1px;
+      overflow: hidden;
+      clip-path: inset(50%);
+      white-space: nowrap;
+    }
+
+   
+    .preview-dialog {
+      width: 100vw;
+      max-width: none;
+      height: 100vh;
+      height: 100svh;
+      max-height: none;
+      margin: 0;
+      padding: 0;
+      border: 0;
+      color: var(--text-color);
+      background: transparent;
+      overflow: hidden;
+    }
+
+    .preview-dialog::backdrop,
+    .mail-dialog::backdrop,
+    .keypad-dialog::backdrop {
+      background: transparent;
+    }
+
+    .preview-container {
+      width: 100%;
+      height: 100%;
+    }
+
+    .preview-scroll {
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      width: 100%;
+      height: 100%;
+      padding: 32px 16px;
+      overflow: auto;
+    }
+
+    .preview-paper-group {
+      --paper-action-size: 48px;
+      --paper-action-gap: 48px;
+      position: relative;
+      flex-shrink: 0;
+      width: min(720px, calc(100vw - 160px));
+      margin: 0;
+      padding: 0;
+    }
+
+    .preview-paper {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 210 / 297;
+      margin: 0;
+      padding: 0;
+      border: 1px solid #000;
+      overflow: hidden;
+      background: #fff;
+      box-shadow: none;
+    }
+
+    .paper-text-area {
+      position: absolute;
+      inset: 4% 6% 4%;
+      overflow: auto;
+      scrollbar-width: thin;
+    }
+
+    .preview-content {
+      margin: 0;
+      font-size: 16px;
+      font-weight: 400;
+      line-height: 1.9;
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+    }
+
+    .paper-send-area {
+      position: absolute;
+      right: 7%;
+      bottom: 5%;
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+    }
+
+    .paper-send-button,
+    .paper-trash-button {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 48px;
+      height: 48px;
+      padding: 10px;
+      border: 0;
+      border-radius: 0;
+      color: #242321;
+      background: transparent;
+      cursor: pointer;
+    }
+
+    .paper-send-button svg,
+    .paper-trash-button svg {
+      display: block;
+      width: 28px;
+      height: 28px;
+      pointer-events: none;
+    }
+
+    .paper-send-button:hover,
+    .paper-trash-button:hover {
+      color: #00a3e8;
+    }
+
+    .paper-send-button:focus-visible,
+    .paper-trash-button:focus-visible {
+      outline: 1px dashed currentColor;
+      outline-offset: 2px;
+    }
+
+    .paper-trash-button {
+      position: absolute;
+      bottom: 5%;
+      left: calc(100% + var(--paper-action-gap));
+      width: var(--paper-action-size);
+      height: var(--paper-action-size);
+      margin: 0;
+    }
+
+  
+    .mail-dialog {
+      position: fixed;
+      inset: auto;
+      width: min(340px, calc(100vw - 24px));
+      max-width: none;
+      max-height: calc(100svh - 24px);
+      margin: 0;
+      padding: 0;
+      border: 1px solid #000;
+      border-radius: 0;
+      color: #242321;
+      background: #fff;
+      overflow: auto;
+      box-shadow: none;
+    }
+
+    .mail-form {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 14px;
+    }
+
+    .mail-recipient {
+      flex: 1;
+      min-width: 0;
+      width: 100%;
+      padding: 8px 0;
+      border: 0;
+      border-radius: 0;
+      outline: none;
+      background: transparent;
+      box-shadow: none;
+      font-size: 16px;
+    }
+
+    .mail-recipient::placeholder {
+      color: #999;
+    }
+
+    .mail-recipient:focus {
+      border: 0;
+      outline: none;
+      box-shadow: none;
+    }
+
+    .mail-submit {
+      flex: 0 0 auto;
+      width: auto;
+      margin: 0;
+      padding: 9px 12px;
+      border: 0;
+      border-radius: 0;
+      background: transparent;
+      color: #242321;
+      box-shadow: none;
+      font-size: 13px;
+      line-height: 1.4;
+      white-space: nowrap;
+      cursor: pointer;
+    }
+
+    .mail-submit:hover,
+    .mail-submit:active {
+      border: 0;
+      background: transparent;
+      color: #242321;
+      box-shadow: none;
+    }
+
+    .mail-submit:focus-visible {
+      outline: 1px dashed #000;
+      outline-offset: 3px;
+    }
+
+   
+    .keypad-dialog {
+      position: fixed;
+      inset: 0;
+      width: 100vw;
+      height: 100svh;
+      max-width: none;
+      max-height: none;
+      margin: auto;
+      padding: 0;
+      border: 0;
+      border-radius: 0;
+      color: var(--text-color);
+      background: transparent;
+      box-shadow: none;
+      overflow: hidden;
+    }
+
+    .storage-lock-group {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 130px;
+      width: min(240px, calc(100vw - 48px));
+      max-height: calc(100svh - 32px);
+      overflow: auto;
+      padding: 8px 0;
+    }
+
+    .storage-lock-panel {
+      width: 100%;
+      padding: 16px;
+      border: 1px solid #000;
+      background: #fff;
+      color: #000;
+      flex-shrink: 0;
+    }
+
+    .storage-keyhole {
+      display: grid;
+      place-items: center;
+      width: 56px;
+      height: 56px;
+      flex-shrink: 0;
+      border: 1px solid #000;
+      border-radius: 50%;
+      background: #fff;
+    }
+
+    .storage-keyhole svg {
+      width: 28px;
+      height: 34px;
+    }
+
+    .storage-keyhole.is-ready {
+      outline: 1px dashed #000;
+      outline-offset: 5px;
+    }
+
+    .storage-keyhole.is-unlocked svg {
+      visibility: hidden;
+    }
+
+    .storage-key-zone {
+      position: fixed;
+      left: clamp(12px, 8vw, 120px);
+      top: 50%;
+      transform: translateY(-50%);
+      width: 100px;
+      height: 100px;
+      z-index: 2;
+    }
+
+    .storage-key-zone[hidden] {
+      display: none;
+    }
+
+    .storage-key {
+      position: fixed;
+      display: grid;
+      place-items: center;
+      left: 6px;
+      top: 26px;
+      width: 88px;
+      height: 48px;
+      padding: 0;
+      border: 0;
+      background: transparent;
+      color: #000;
+      opacity: 0;
+      cursor: grab;
+      touch-action: none;
+      user-select: none;
+    }
+
+    .storage-key svg {
+      width: 88px;
+      height: 48px;
+      pointer-events: none;
+    }
+
+    .storage-key-zone:hover .storage-key,
+    .storage-key:focus-visible,
+    .storage-key.is-dragging {
+      opacity: 1;
+    }
+
+    .storage-key.is-dragging {
+      cursor: grabbing;
+    }
+
+    .storage-key:focus-visible {
+      outline: 1px dashed #000;
+    }
+
+    .keypad-display {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      height: 52px;
+      margin-bottom: 8px;
+      padding-left: 8px;
+      font-size: 24px;
+      font-weight: 400;
+      line-height: 1;
+      letter-spacing: 8px;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .keypad-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 4px;
+    }
+
+    .keypad-number {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      height: 60px;
+      margin: 0;
+      padding: 0;
+      border: 0;
+      border-radius: 0;
+      color: inherit;
+      background: transparent;
+      font-size: 22px;
+      font-weight: 400;
+      line-height: 1;
+      cursor: pointer;
+    }
+
+    .keypad-number:focus-visible {
+      outline: 1px dashed currentColor;
+      outline-offset: -8px;
+    }
+
+    .keypad-number[data-digit="0"] {
+      grid-column: 2;
+    }
+
+    .keypad-dialog.is-error .storage-lock-panel {
+      animation: keypad-shake 320ms ease-in-out;
+    }
+
+    @keyframes keypad-shake {
+      0%, 100% { transform: translateX(0); }
+      20% { transform: translateX(-8px); }
+      40% { transform: translateX(8px); }
+      60% { transform: translateX(-6px); }
+      80% { transform: translateX(6px); }
+    }
+
+    @media (max-width: 600px) {
+      .position-top {
+        top: calc(12px + env(safe-area-inset-top, 0px));
+      }
+
+      .position-left {
+        left: calc(8px + env(safe-area-inset-left, 0px));
+      }
+
+      .position-right {
+        right: calc(8px + env(safe-area-inset-right, 0px));
+      }
+
+      .position-bottom {
+        bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+      }
+
+      .position-top-right {
+        top: calc(12px + env(safe-area-inset-top, 0px));
+        right: calc(8px + env(safe-area-inset-right, 0px));
+      }
+
+      .preview-scroll {
+        padding: 20px 12px;
+      }
+
+      .preview-paper-group {
+        --paper-action-size: 40px;
+        --paper-action-gap: 8px;
+        width: calc(100vw - 120px);
+      }
+
+      .paper-send-button,
+      .paper-trash-button {
+        width: 40px;
+        height: 40px;
+        padding: 8px;
+      }
+
+      .paper-send-button svg,
+      .paper-trash-button svg {
+        width: 24px;
+        height: 24px;
+      }
+
+      .mail-form {
+        gap: 10px;
+        padding: 12px;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .keypad-dialog.is-error .storage-lock-panel {
+        animation: none;
+      }
+    }
+  
+    /* PDF 다운로드 / 여러 장 기록 대지 */
+    .preview-paper-group .preview-paper + .preview-paper {
+      margin-top: 24px;
+    }
+    .paper-text-area { overflow: hidden; }
+    .preview-paper-group > .paper-send-area {
+      right: auto;
+      left: calc(100% + var(--paper-action-gap));
+      bottom: calc(5% + var(--paper-action-size) + 12px);
+    }
+    .mail-dialog { width: min(420px, calc(100vw - 24px)); }
+    .mail-form {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 10px;
+    }
+    .download-note, .download-status {
+      grid-column: 1 / -1;
+      margin: 0;
+      font-size: 13px;
+      line-height: 1.6;
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+    }
+    .download-note { color: #666; }
+    .mail-submit:disabled, .paper-send-button:disabled {
+      opacity: .45;
+      cursor: wait;
+    }
+    .pdf-render-stage {
+      position: fixed;
+      left: 0;
+      top: 0;
+      width: 720px;
+      z-index: -10000;
+      pointer-events: none;
+      background: #fff;
+    }
+    .pdf-render-page {
+      position: relative;
+      width: 720px;
+      height: 1018.2857142857px;
+      margin: 0;
+      border: 0;
+      background: #fff;
+      color: #242321;
+      overflow: hidden;
+    }
+    .pdf-render-area {
+      position: absolute;
+      overflow: hidden;
+    }
+    .pdf-render-text {
+      display: block;
+      margin: 0;
+      padding: 0;
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+      word-break: normal;
+    }
+
+    /* 기록 창: A4 대지를 화면 중앙에 배치 */
+.preview-scroll {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+
+  width: 100%;
+  height: 100%;
+  padding: 32px 16px;
+  overflow: auto;
+}
+
+.preview-paper-group {
+  /*
+    가로 공간과 화면 높이를 모두 고려해서 크기 결정
+    0.7070707 = A4의 가로 / 세로 비율 (210 / 297)
+  */
+  width: min(
+    720px,
+    calc(100vw - 160px),
+    calc((100svh - 64px) * 0.7070707)
+  );
+
+  flex-shrink: 0;
+
+  /* 한 장일 때 세로 중앙, 여러 장이면 위에서부터 스크롤 */
+  margin: auto 0;
+}
+
+.preview-paper {
+  width: 100%;
+  aspect-ratio: 210 / 297;
+}
+
+  </style>
+  <script>
+  (() => {
+    const fonts = [
+      "FontA",
+      "FontB",
+      "FontC",
+      "FontD"
+    ];
+
+    const selectedFont =
+      fonts[Math.floor(Math.random() * fonts.length)];
+
+    document.documentElement.style.setProperty(
+      "--site-font",
+      `"${selectedFont}"`
+    );
+  })();
+</script>
+</head>
+
+<body>
+  <main class="scene" id="scene" aria-label="현관문">
+    <div class="room-image" id="roomImage"></div>
+
+    <div class="image-viewport">
+      <div class="image-world" id="imageWorld"></div>
+    </div>
+
+    <nav
+      class="navigation"
+      id="navigation"
+      aria-label="공간 이동"
+    ></nav>
+
+    <textarea
+      class="ime-input"
+      id="imeInput"
+      aria-label="한글 입력"
+      autocomplete="off"
+      autocorrect="off"
+      autocapitalize="off"
+      spellcheck="false"
+      disabled
+    ></textarea>
+
+    <p
+      class="sr-only"
+      id="announcement"
+      role="status"
+      aria-live="polite"
+    ></p>
+  </main>
+
+  <dialog
+    class="preview-dialog"
+    id="previewDialog"
+    aria-label="입력 기록"
+  >
+    <div class="preview-container">
+      <div class="preview-scroll" id="previewScroll">
+        <div class="preview-paper-group">
+          <article class="preview-paper">
+            <div class="paper-text-area" id="paperTextArea">
+              <p
+                class="preview-content"
+                id="previewContent"
+              ></p>
+            </div>
+
+            <div class="paper-send-area">
+              <button
+                class="paper-send-button"
+                id="paperSendButton"
+                type="button"
+                aria-label="PDF와 MP3를 ZIP으로 다운로드"
+                title="기록 ZIP 다운로드"
+              >
+                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                  <path d="M12 3V15M7 10L12 15L17 10M4 16V21H20V16" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
+              </button>
+            </div>
+          </article>
+
+          <button
+            class="paper-trash-button"
+            id="paperTrashButton"
+            type="button"
+            aria-label="모든 공간의 기록 버리기"
+            title="기록 버리기"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+              aria-hidden="true"
+            >
+              <path
+                d="M4 6H20M9 6V3H15V6M6 6L7 21H17L18 6M10 10V17M14 10V17"
+                stroke="currentColor"
+                stroke-width="1.5"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+          </button>
+        </div>
+      </div>
+    </div>
+  </dialog>
+
+
+  <dialog
+    class="mail-dialog"
+    id="mailDialog"
+    aria-label="ZIP 파일명에 사용할 이메일 주소 입력"
+  >
+    <form class="mail-form" id="mailForm">
+      <input
+        class="mail-recipient"
+        id="mailRecipient"
+        type="email"
+        placeholder="받을 이메일 주소"
+        aria-label="받을 이메일 주소"
+        autocomplete="off"
+        maxlength="254"
+        required
+      />
+
+      <button
+        class="mail-submit"
+        type="submit"
+        aria-label="PDF와 MP3를 ZIP으로 저장"
+        title="기록 저장"
+      >
+        기록 저장
+      </button>
+
+      <p class="download-note">입력한 이메일 주소는 ZIP 파일명으로 사용됩니다. PDF와 사운드 MP3가 함께 저장되며, 이메일이 자동 발송되지는 않습니다.</p>
+      <p
+        class="download-status"
+        id="mailStatus"
+        role="status"
+        aria-live="polite"
+      ></p>
+    </form>
+  </dialog>
+
+
+  <dialog
+    class="keypad-dialog"
+    id="keypadDialog"
+    aria-label="창고 암호 입력"
+  >
+    <div class="storage-key-zone" id="storageKeyZone">
+      <button
+        class="storage-key"
+        id="storageKey"
+        type="button"
+        aria-label="열쇠를 열쇠구멍으로 드래그"
+      >
+        <svg
+          viewBox="0 0 88 48"
+          xmlns="http://www.w3.org/2000/svg"
+          aria-hidden="true"
+        >
+          <path
+            d="M39 20H80V28H73V36H65V28H57V34H49V28H39 A19 19 0 1 1 39 20Z"
+            fill="white"
+            stroke="black"
+            stroke-width="1.2"
+            stroke-linejoin="round"
+          />
+          <circle
+            cx="21"
+            cy="24"
+            r="8"
+            fill="white"
+            stroke="black"
+            stroke-width="1.2"
+          />
+        </svg>
+      </button>
+    </div>
+
+    <div class="storage-lock-group">
+      <div
+        class="storage-keyhole"
+        id="storageKeyhole"
+        role="img"
+        aria-label="잠긴 열쇠구멍"
+      >
+        <svg
+          viewBox="0 0 28 34"
+          xmlns="http://www.w3.org/2000/svg"
+          aria-hidden="true"
+        >
+          <path
+            d="M10 17 A8 8 0 1 1 18 17 L21 30 H7 Z"
+            fill="white"
+            stroke="black"
+            stroke-width="1.2"
+            stroke-linejoin="round"
+          />
+        </svg>
+      </div>
+
+      <div class="storage-lock-panel">
+        <div
+          class="keypad-display"
+          id="keypadDisplay"
+          aria-label="입력한 암호"
+          aria-live="polite"
+          aria-atomic="true"
+        ></div>
+
+        <div class="keypad-grid" id="keypadGrid">
+          <button class="keypad-number" type="button" data-digit="1">1</button>
+          <button class="keypad-number" type="button" data-digit="2">2</button>
+          <button class="keypad-number" type="button" data-digit="3">3</button>
+          <button class="keypad-number" type="button" data-digit="4">4</button>
+          <button class="keypad-number" type="button" data-digit="5">5</button>
+          <button class="keypad-number" type="button" data-digit="6">6</button>
+          <button class="keypad-number" type="button" data-digit="7">7</button>
+          <button class="keypad-number" type="button" data-digit="8">8</button>
+          <button class="keypad-number" type="button" data-digit="9">9</button>
+          <button class="keypad-number" type="button" data-digit="0">0</button>
+        </div>
+      </div>
+    </div>
+  </dialog>
+
+  <script>
+
+    const rooms = {
+      entrance: {
+        name: "현관문",
+        color: "#000000",
+        mode: "none",
+        typing: false,
+        links: [
+          {
+            label: "현관문",
+            target: "hall",
+            position: "center"
+          }
+        ]
+      },
+
+      hall: {
+        name: "현관",
+        color: "#000000",
+        parent: "entrance",
+        backLabel: "현관문",
+        links: [
+          {
+            label: "주방",
+            target: "kitchen",
+            position: "left"
+          },
+          {
+            label: "거실",
+            target: "living",
+            position: "right"
+          },
+          {
+            label: "2층",
+            target: "upstairs",
+            position: "top"
+          }
+        ]
+      },
+
+      kitchen: {
+        name: "주방",
+        color: "#000000",
+        rotation: 0,
+        parent: "hall"
+      },
+
+      living: {
+        name: "거실",
+        color: "#000000",
+        mode: "tower",
+        parent: "hall",
+        links: [
+          {
+            label: "창고",
+            target: "storage",
+            position: "top-right"
+          }
+        ]
+      },
+
+      storage: {
+        name: "창고",
+        color: "#000000",
+        mode: "tower",
+        parent: "living"
+      },
+
+      upstairs: {
+        name: "2층",
+        color: "#000000",
+        parent: "hall",
+        links: [
+          {
+            label: "엄마 방",
+            target: "mother",
+            position: "left"
+          },
+          {
+            label: "내 방",
+            target: "myroom",
+            position: "right"
+          },
+          {
+            label: "작업실",
+            target: "studio",
+            position: "top"
+          }
+        ]
+      },
+
+      mother: {
+        name: "엄마 방",
+        color: "#000000",
+        scale: 0.4,
+        mode: "puzzle",
+        parent: "upstairs"
+      },
+
+      myroom: {
+        name: "내 방",
+        color: "#000000",
+        mode: "scatter",
+        scale: 1,
+        parent: "upstairs",
+        links: [
+          {
+            label: "옷장",
+            target: "closet",
+            position: "top"
+          }
+        ]
+      },
+
+      closet: {
+        name: "옷장",
+        color: "#000000",
+        mode: "none",
+        parent: "myroom"
+      },
+
+      studio: {
+        name: "작업실",
+        color: "#000000",
+        mode: "none",
+        typing: false,
+        parent: "upstairs"
+      }
+    };
+
+    const roomDefaults = {
+      image: "",
+      mode: "row",
+      scale: 0.7,
+      rotation: 0,
+      typing: true,
+      parent: null,
+      links: []
+    };
+
+    Object.keys(rooms).forEach(id => {
+      rooms[id] = {
+        ...roomDefaults,
+        ...rooms[id]
+      };
+    });
+
+
+    const CHOSEONG = Array.from(
+      "ㄱㄲㄴㄷㄸㄹㅁㅂㅃㅅㅆㅇㅈㅉㅊㅋㅌㅍㅎ"
+    );
+
+    const JUNGSEONG = Array.from(
+      "ㅏㅐㅑㅒㅓㅔㅕㅖㅗㅘㅙㅚㅛㅜㅝㅞㅟㅠㅡㅢㅣ"
+    );
+
+    const JONGSEONG = [
+      "",
+      ...Array.from(
+        "ㄱㄲㄳㄴㄵㄶㄷㄹㄺㄻㄼㄽㄾㄿㅀㅁㅂㅄㅅㅆㅇㅈㅊㅋㅌㅍㅎ"
+      )
+    ];
+
+    const COMPLEX_JAMO = {
+      "ㄳ": ["ㄱ", "ㅅ"],
+      "ㄵ": ["ㄴ", "ㅈ"],
+      "ㄶ": ["ㄴ", "ㅎ"],
+      "ㄺ": ["ㄹ", "ㄱ"],
+      "ㄻ": ["ㄹ", "ㅁ"],
+      "ㄼ": ["ㄹ", "ㅂ"],
+      "ㄽ": ["ㄹ", "ㅅ"],
+      "ㄾ": ["ㄹ", "ㅌ"],
+      "ㄿ": ["ㄹ", "ㅍ"],
+      "ㅀ": ["ㄹ", "ㅎ"],
+      "ㅄ": ["ㅂ", "ㅅ"],
+      "ㅘ": ["ㅗ", "ㅏ"],
+      "ㅙ": ["ㅗ", "ㅐ"],
+      "ㅚ": ["ㅗ", "ㅣ"],
+      "ㅝ": ["ㅜ", "ㅓ"],
+      "ㅞ": ["ㅜ", "ㅔ"],
+      "ㅟ": ["ㅜ", "ㅣ"],
+      "ㅢ": ["ㅡ", "ㅣ"]
+    };
+
+    const jamoImages = Object.fromEntries(
+      [...CHOSEONG, ...JUNGSEONG]
+        .filter(jamo => !COMPLEX_JAMO[jamo])
+        .map(jamo => [
+          jamo,
+          `./images/${jamo}.png`
+        ])
+    );
+
+    const elasticJamos = new Set([
+      "ㅊ", "ㅋ", "ㅌ", "ㅍ", "ㅎ",
+      "ㅐ", "ㅒ", "ㅔ", "ㅖ"
+    ]);
+
+    function splitJamo(jamo) {
+      return COMPLEX_JAMO[jamo] || [jamo];
+    }
+
+    function decomposeCharacter(character) {
+      const code = character.codePointAt(0);
+
+      if (code >= 0xAC00 && code <= 0xD7A3) {
+        const offset = code - 0xAC00;
+        const cho = Math.floor(offset / 588);
+        const jung = Math.floor((offset % 588) / 28);
+        const jong = offset % 28;
+
+        return [
+          CHOSEONG[cho],
+          ...splitJamo(JUNGSEONG[jung]),
+          ...(jong ? splitJamo(JONGSEONG[jong]) : [])
+        ];
+      }
+
+      return jamoImages[character] || COMPLEX_JAMO[character]
+        ? splitJamo(character)
+        : [];
+    }
+
+    function textToJamos(text) {
+      return Array.from(text.normalize("NFC"))
+        .flatMap(decomposeCharacter);
+    }
+
+
+    const scene = document.getElementById("scene");
+    const roomImage = document.getElementById("roomImage");
+    const imageWorld = document.getElementById("imageWorld");
+    const navigation = document.getElementById("navigation");
+    const imeInput = document.getElementById("imeInput");
+    const announcement = document.getElementById("announcement");
+
+    const previewDialog = document.getElementById("previewDialog");
+    const previewContent = document.getElementById("previewContent");
+    const previewScroll = document.getElementById("previewScroll");
+    const paperTextArea = document.getElementById("paperTextArea");
+    const paperSendButton = document.getElementById("paperSendButton");
+    const paperTrashButton = document.getElementById("paperTrashButton");
+
+    const mailDialog = document.getElementById("mailDialog");
+    const mailForm = document.getElementById("mailForm");
+    const mailRecipient = document.getElementById("mailRecipient");
+
+    const mailStatus = document.getElementById("mailStatus");
+
+    const keypadDialog = document.getElementById("keypadDialog");
+    const keypadGrid = document.getElementById("keypadGrid");
+    const keypadDisplay = document.getElementById("keypadDisplay");
+    const storageKeyZone = document.getElementById("storageKeyZone");
+    const storageKey = document.getElementById("storageKey");
+    const storageKeyhole = document.getElementById("storageKeyhole");
+
+    const roomStates = Object.fromEntries(
+      Object.keys(rooms).map(id => [
+        id,
+        {
+          text: "",
+          tiles: []
+        }
+      ])
+    );
+
+    let currentRoom = "entrance";
+    let composing = false;
+    let layoutFrame = null;
+    let previewSnapshot = "";
+
+    const IMAGE_GAP = 0;
+    const STORAGE_PASSWORD = "7895";
+
+    let keypadValue = "";
+    let keypadErrorTimer = null;
+    let keypadLocked = false;
+    let storageKeyUnlocked = false;
+    let storagePasswordUnlocked = false;
+    let keyDrag = null;
+
+    const random = (min, max) =>
+      Math.random() * (max - min) + min;
+
+    function focusInput(moveCaret = false) {
+      if (
+        !rooms[currentRoom].typing ||
+        previewDialog.open ||
+        mailDialog.open ||
+        keypadDialog.open
+      ) {
+        return;
+      }
+
+      imeInput.focus({ preventScroll: true });
+
+      if (moveCaret) {
+        const end = imeInput.value.length;
+        imeInput.setSelectionRange(end, end);
+      }
+    }
+
+    function scheduleLayout(roomId) {
+      if (roomId !== currentRoom) return;
+
+      if (layoutFrame !== null) {
+        cancelAnimationFrame(layoutFrame);
+      }
+
+      layoutFrame = requestAnimationFrame(() => {
+        layoutFrame = null;
+        layoutImages();
+      });
+    }
+
+   
+    const jamoSounds = {
+      "ㄱ": "./sounds/1.mp3",
+      "ㄲ": "./sounds/ㄲ.mp3",
+      "ㄴ": "./sounds/4.mp3",
+      "ㄷ": "./sounds/4.mp3",
+      "ㄸ": "./sounds/ㄸ.mp3",
+      "ㄹ": "./sounds/1.mp3",
+      "ㅁ": "./sounds/2.mp3",
+      "ㅂ": "./sounds/2.mp3",
+      "ㅃ": "./sounds/ㅃ.mp3",
+      "ㅅ": "./sounds/4.mp3",
+      "ㅆ": "./sounds/ㅆ.mp3",
+      "ㅇ": "./sounds/4.mp3",
+      "ㅈ": "./sounds/2.mp3",
+      "ㅉ": "./sounds/ㅉ.mp3",
+      "ㅊ": "./sounds/6.mp3",
+      "ㅋ": "./sounds/6.mp3",
+      "ㅌ": "./sounds/6.mp3",
+      "ㅍ": "./sounds/6.mp3",
+      "ㅎ": "./sounds/6.mp3",
+
+      "ㅏ": "./sounds/3.mp3",
+      "ㅐ": "./sounds/6.mp3",
+      "ㅑ": "./sounds/3.mp3",
+      "ㅒ": "./sounds/6.mp3",
+      "ㅓ": "./sounds/3.mp3",
+      "ㅔ": "./sounds/6.mp3",
+      "ㅕ": "./sounds/3.mp3",
+      "ㅖ": "./sounds/6.mp3",
+      "ㅗ": "./sounds/3.mp3",
+      "ㅛ": "./sounds/3.mp3",
+      "ㅜ": "./sounds/3.mp3",
+      "ㅠ": "./sounds/3.mp3",
+      "ㅡ": "./sounds/3.mp3",
+      "ㅣ": "./sounds/3.mp3"
+    };
+
+    const jamoToEnglishKey = {
+      "ㄱ": "r", "ㄲ": "R", "ㄴ": "s", "ㄷ": "e", "ㄸ": "E",
+      "ㄹ": "f", "ㅁ": "a", "ㅂ": "q", "ㅃ": "Q", "ㅅ": "t",
+      "ㅆ": "T", "ㅇ": "d", "ㅈ": "w", "ㅉ": "W", "ㅊ": "c",
+      "ㅋ": "z", "ㅌ": "x", "ㅍ": "v", "ㅎ": "g",
+
+      "ㅏ": "k", "ㅐ": "o", "ㅑ": "i", "ㅒ": "O", "ㅓ": "j",
+      "ㅔ": "p", "ㅕ": "u", "ㅖ": "P", "ㅗ": "h", "ㅘ": "hk",
+      "ㅙ": "ho", "ㅚ": "hl", "ㅛ": "y", "ㅜ": "n", "ㅝ": "nj",
+      "ㅞ": "np", "ㅟ": "nl", "ㅠ": "b", "ㅡ": "m", "ㅢ": "ml",
+      "ㅣ": "l"
+    };
+
+    const englishKeySounds = {};
+
+    for (const key of "abcdefghijklmnopqrstuvwxyz") {
+      englishKeySounds[key] =
+        `./sounds/keys/sound-${key}.mp3`;
+    }
+
+    for (const key of "ABCDEFGHIJKLMNOPQRSTUVWXYZ") {
+      englishKeySounds[key] =
+        `./sounds/keys/${key}.mp3`;
+    }
+
+   
+    const FOLLOW_KEY_DELAY = 1000;
+    const FOLLOW_KEY_GAIN = 10;
+    const FOLLOW_KEY_STEP_DELAY = 90;
+
+   
+    const CLOSET_SOUND_CUTOFF = 350;
+    const CLOSET_SOUND_GAIN = 0.45;
+
+    const followSoundTimeouts = new Set();
+    const audioBufferCache = new Map();
+    const audioBufferLoading = new Map();
+
+    let audioContext = null;
+    let audioUnlocked = false;
+    let typingAudioPreloaded = false;
+
+    function getAudioContext() {
+      if (!audioContext) {
+        const AudioContextClass =
+          window.AudioContext || window.webkitAudioContext;
+
+        if (!AudioContextClass) return null;
+
+        audioContext = new AudioContextClass();
+      }
+
+      return audioContext;
+    }
+
+    async function resumeAudioContextIfNeeded() {
+      const ctx = getAudioContext();
+
+      if (!ctx) return null;
+
+      if (ctx.state === "suspended") {
+        try {
+          await ctx.resume();
+        } catch (_) {}
+      }
+
+      return ctx;
+    }
+
+    async function loadAudioBuffer(src) {
+      if (audioBufferCache.has(src)) {
+        return audioBufferCache.get(src);
+      }
+
+      if (audioBufferLoading.has(src)) {
+        return audioBufferLoading.get(src);
+      }
+
+      const loading = (async () => {
+        const ctx = getAudioContext();
+
+        if (!ctx) {
+          throw new Error("Web Audio API is unavailable.");
+        }
+
+        const response = await fetch(src);
+
+        if (!response.ok) {
+          throw new Error(`Failed to fetch audio: ${src}`);
+        }
+
+        const arrayBuffer = await response.arrayBuffer();
+        const buffer = await ctx.decodeAudioData(arrayBuffer);
+
+        audioBufferCache.set(src, buffer);
+
+        return buffer;
+      })();
+
+      audioBufferLoading.set(src, loading);
+
+      try {
+        return await loading;
+      } finally {
+        audioBufferLoading.delete(src);
+      }
+    }
+
+    function preloadTypingAudio() {
+      if (typingAudioPreloaded) return;
+
+      typingAudioPreloaded = true;
+
+ 
+      const sources = new Set([
+        ...Object.values(jamoSounds),
+        ...Object.values(englishKeySounds)
+      ]);
+
+      sources.forEach(src => {
+        loadAudioBuffer(src).catch(() => {});
+      });
+    }
+
+    function unlockTypingAudio() {
+      audioUnlocked = true;
+
+      resumeAudioContextIfNeeded().catch(() => {});
+      preloadTypingAudio();
+    }
+
+    document.addEventListener(
+      "pointerdown",
+      unlockTypingAudio,
+      { capture: true }
+    );
+
+    document.addEventListener(
+      "keydown",
+      unlockTypingAudio,
+      { capture: true }
+    );
+
+
+
+    async function playClosetAudioBySrc(src, gainValue = 1) {
+      if (!audioUnlocked || !src) return;
+
+      try {
+        const ctx = await resumeAudioContextIfNeeded();
+
+        if (!ctx) return;
+
+        const buffer = await loadAudioBuffer(src);
+
+        const source = ctx.createBufferSource();
+        source.buffer = buffer;
+
+        const lowpassA = ctx.createBiquadFilter();
+        lowpassA.type = "lowpass";
+        lowpassA.frequency.value = CLOSET_SOUND_CUTOFF;
+        lowpassA.Q.value = 0.707;
+
+        const lowpassB = ctx.createBiquadFilter();
+        lowpassB.type = "lowpass";
+        lowpassB.frequency.value = CLOSET_SOUND_CUTOFF;
+        lowpassB.Q.value = 0.707;
+
+        const gainNode = ctx.createGain();
+        gainNode.gain.value =
+          gainValue * CLOSET_SOUND_GAIN;
+
+        source.connect(lowpassA);
+        lowpassA.connect(lowpassB);
+        lowpassB.connect(gainNode);
+        gainNode.connect(ctx.destination);
+
+        source.onended = () => {
+          source.disconnect();
+          lowpassA.disconnect();
+          lowpassB.disconnect();
+          gainNode.disconnect();
+        };
+
+        source.start(0);
+      } catch (_) {}
+    }
+
+
+// 기존 playAudioBySrc부터 playChangedTypingSounds 함수 끝까지를 이 파일 내용으로 교체하세요.
+
+    function playAudioBySrc(src, volume = 1, roomId = currentRoom) {
+      if (!audioUnlocked || !src) return;
+
+      if (roomId === "closet") {
+        playClosetAudioBySrc(src, volume);
+        return;
+      }
+
+      if (roomId === "living") {
+        playBoostedAudioBySrc(src, volume, roomId);
+        return;
+      }
+
+      const audio = new Audio(src);
+      const roomGain = roomId === "myroom" ? 0.5 : 1;
+
+      audio.volume = Math.max(0, Math.min(volume, 1)) * roomGain;
+      audio.currentTime = 0;
+
+      audio.play().catch(() => {});
+    }
+
+    async function playBoostedAudioBySrc(src, gainValue = 1, roomId = currentRoom) {
+      if (!audioUnlocked || !src) return;
+
+      if (roomId === "closet") {
+        await playClosetAudioBySrc(src, gainValue);
+        return;
+      }
+
+      try {
+        const ctx = await resumeAudioContextIfNeeded();
+
+        if (!ctx) return;
+
+        const buffer = await loadAudioBuffer(src);
+
+        const source = ctx.createBufferSource();
+        source.buffer = buffer;
+        source.playbackRate.value = roomId === "living" ? 2 : 1;
+
+        const gainNode = ctx.createGain();
+        gainNode.gain.value = gainValue * (roomId === "myroom" ? 0.5 : 1);
+
+        source.connect(gainNode);
+        gainNode.connect(ctx.destination);
+
+        source.onended = () => {
+          source.disconnect();
+          gainNode.disconnect();
+        };
+
+        source.start(0);
+      } catch (_) {}
+    }
+
+    function playJamoSound(jamo, roomId = currentRoom) {
+      playAudioBySrc(jamoSounds[jamo], 1, roomId);
+    }
+
+    function playFollowKeySound(jamo, roomId = currentRoom) {
+      if (!audioUnlocked) return;
+
+      const keySequence = jamoToEnglishKey[jamo];
+
+      if (!keySequence) return;
+
+      const timeoutId = setTimeout(() => {
+        followSoundTimeouts.delete(timeoutId);
+
+        [...keySequence].forEach((keyChar, index) => {
+          const keySrc = englishKeySounds[keyChar];
+
+          if (!keySrc) return;
+
+          const stepTimeoutId = setTimeout(() => {
+            followSoundTimeouts.delete(stepTimeoutId);
+
+            playBoostedAudioBySrc(
+              keySrc,
+              FOLLOW_KEY_GAIN,
+              roomId
+            );
+          }, index * FOLLOW_KEY_STEP_DELAY);
+
+          followSoundTimeouts.add(stepTimeoutId);
+        });
+      }, FOLLOW_KEY_DELAY);
+
+      followSoundTimeouts.add(timeoutId);
+    }
+
+    function clearFollowKeyTimeouts() {
+      followSoundTimeouts.forEach(id => clearTimeout(id));
+      followSoundTimeouts.clear();
+    }
+
+    function playChangedTypingSounds(previousText, nextText) {
+      if (previousText === nextText) return;
+
+      const previousJamos = textToJamos(previousText);
+      const nextEntries = textToImageEntries(nextText);
+      const nextJamos = nextEntries.map(entry => entry.jamo);
+      const roomId = currentRoom;
+
+      let prefix = 0;
+
+      while (
+        prefix < previousJamos.length &&
+        prefix < nextJamos.length &&
+        previousJamos[prefix] === nextJamos[prefix]
+      ) {
+        prefix++;
+      }
+
+      let suffix = 0;
+
+      while (
+        suffix < previousJamos.length - prefix &&
+        suffix < nextJamos.length - prefix &&
+        previousJamos[previousJamos.length - 1 - suffix] ===
+          nextJamos[nextJamos.length - 1 - suffix]
+      ) {
+        suffix++;
+      }
+
+      for (let index = prefix; index < nextJamos.length - suffix; index++) {
+        const entry = nextEntries[index];
+        // 주방: 원본 이미지(어절의 첫 자모)에만 두 종류의 사운드를 허용한다.
+        if (roomId === "kitchen" && !entry.wordStart) continue;
+        playJamoSound(entry.jamo, roomId);
+        playFollowKeySound(entry.jamo, roomId);
+      }
+    }
+
+
+
+
+    function filterHangul(text) {
+      return text.replace(
+        /[^\uAC00-\uD7A3\u3131-\u318E\u1100-\u11FF \n]/g,
+        ""
+      );
+    }
+
+    function sanitizeHangulInput() {
+      const original = imeInput.value;
+      const filtered = filterHangul(original);
+
+      if (original === filtered) return;
+
+      const start = imeInput.selectionStart;
+      const end = imeInput.selectionEnd;
+
+      const nextStart = filterHangul(
+        original.slice(0, start)
+      ).length;
+
+      const nextEnd = filterHangul(
+        original.slice(0, end)
+      ).length;
+
+      imeInput.value = filtered;
+      imeInput.setSelectionRange(nextStart, nextEnd);
+    }
+
+ 
+
+    let visitSequence = 0;
+    let currentVisitId = 0;
+
+    const visits = new Map();
+
+    const roomCharacterOwners = Object.fromEntries(
+      Object.keys(rooms).map(id => [id, []])
+    );
+
+    function startRoomVisit(roomId) {
+      if (!rooms[roomId].typing) {
+        currentVisitId = 0;
+        return;
+      }
+
+      currentVisitId = ++visitSequence;
+
+      visits.set(currentVisitId, {
+        roomId,
+        name: rooms[roomId].name
+      });
+    }
+
+    function updateChronologicalRecord(roomId, previous, next) {
+      if (previous === next) return;
+
+      const owners = roomCharacterOwners[roomId];
+
+      let prefix = 0;
+
+      while (
+        prefix < previous.length &&
+        prefix < next.length &&
+        previous[prefix] === next[prefix]
+      ) {
+        prefix++;
+      }
+
+      let suffix = 0;
+
+      while (
+        suffix < previous.length - prefix &&
+        suffix < next.length - prefix &&
+        previous[previous.length - 1 - suffix] ===
+          next[next.length - 1 - suffix]
+      ) {
+        suffix++;
+      }
+
+      const removedLength =
+        previous.length - prefix - suffix;
+
+      const insertedLength =
+        next.length - prefix - suffix;
+
+      const insertedOwners =
+        Array(insertedLength).fill(currentVisitId);
+
+      roomCharacterOwners[roomId] = [
+        ...owners.slice(0, prefix),
+        ...insertedOwners,
+        ...owners.slice(prefix + removedLength)
+      ];
+    }
+
+    function getChronologicalText() {
+      const textsByVisit = new Map();
+
+      Object.keys(rooms).forEach(roomId => {
+        const text = roomStates[roomId].text;
+        const owners = roomCharacterOwners[roomId];
+
+        for (let index = 0; index < text.length; index++) {
+          const visitId = owners[index];
+
+          if (!visitId) continue;
+
+          textsByVisit.set(
+            visitId,
+            (textsByVisit.get(visitId) || "") + text[index]
+          );
+        }
+      });
+
+      const sections = [];
+
+      for (const [visitId, visit] of visits) {
+        const text = (textsByVisit.get(visitId) || "")
+          .normalize("NFC")
+          .trim();
+
+        if (!text) continue;
+
+        sections.push(`${text} ··· ${visit.name}`);
+      }
+
+      return sections.join("\n\n");
+    }
+
+
+
+    function applyElasticAnimation(record) {
+      if (record.roomId === "kitchen") return;
+      if (!elasticJamos.has(record.jamo)) return;
+
+      const motion = record.motion;
+      const angle = (-70 + Math.random() * 100).toFixed(2);
+
+      motion.style.setProperty("--tilt", `${angle}deg`);
+      motion.style.setProperty("--rest-tilt", `${angle}deg`);
+
+      const horizontalBias = Math.random() > 0.45;
+
+      let stretchX;
+      let stretchY;
+
+      if (horizontalBias) {
+        stretchX = (4.2 + Math.random() * 3.0).toFixed(3);
+        stretchY = (0.04 + Math.random() * 0.22).toFixed(3);
+      } else {
+        stretchX = (0.35 + Math.random() * 0.28).toFixed(3);
+        stretchY = (4.0 + Math.random() * 4.6).toFixed(3);
+      }
+
+      motion.style.setProperty("--stretch-x", stretchX);
+      motion.style.setProperty("--stretch-y", stretchY);
+      motion.style.transform = `rotate(${angle}deg)`;
+
+      motion.classList.remove("elastic-enter");
+      void motion.offsetWidth;
+      motion.classList.add("elastic-enter");
+
+      const clearElastic = event => {
+        if (event.target !== motion) return;
+        if (event.animationName !== "elastic-rubber") return;
+
+        motion.classList.remove("elastic-enter");
+        motion.style.removeProperty("--stretch-x");
+        motion.style.removeProperty("--stretch-y");
+        motion.style.transform = `rotate(${angle}deg)`;
+
+        motion.removeEventListener(
+          "animationend",
+          clearElastic
+        );
+      };
+
+      motion.addEventListener(
+        "animationend",
+        clearElastic
+      );
+    }
+
+
+
+    // 공간별 효과: 새 이미지가 생성될 때만 랜덤값을 정한다.
+    const ROOM_EFFECTS = {
+      kitchenMosaicBlock: 18,
+      motherElasticScale: 0.4,
+      motherSlideMs: 620
+    };
+
+    function textToImageEntries(text) {
+      const entries = [];
+      let wordStart = true;
+      for (const character of Array.from(text.normalize("NFC"))) {
+        if (/\s/u.test(character)) {
+          wordStart = true;
+          continue;
+        }
+        for (const jamo of decomposeCharacter(character)) {
+          entries.push({ jamo, wordStart });
+          wordStart = false;
+        }
+      }
+      return entries;
+    }
+
+    function createLivingFilter() {
+      const hue = random(0, 360);
+      const saturation = random(6, 11);
+      const brightness = random(0.88, 1.18);
+      return `grayscale(1) sepia(1) saturate(${saturation}) hue-rotate(${hue}deg) brightness(${brightness})`;
+    }
+
+    function refreshRoomVisual(record) {
+      if (record.roomId === "living") {
+        record.visual.style.filter = record.livingFilter;
+      }
+      if (record.roomId !== "kitchen" || !record.imageLoaded) return;
+
+      if (!record.wordStart) {
+        if (!record.mosaicCanvas) {
+          const canvas = document.createElement("canvas");
+          canvas.setAttribute("role", "img");
+          canvas.setAttribute("aria-label", `${record.jamo} 모자이크`);
+          const scale = rooms.kitchen.scale *
+            (elasticJamos.has(record.jamo) ? 0.5 : 1);
+          canvas.width = Math.max(1, Math.round(
+            record.naturalWidth * scale / ROOM_EFFECTS.kitchenMosaicBlock
+          ));
+          canvas.height = Math.max(1, Math.round(
+            record.naturalHeight * scale / ROOM_EFFECTS.kitchenMosaicBlock
+          ));
+          const context = canvas.getContext("2d");
+          if (!context) return;
+          context.drawImage(record.originalImage, 0, 0, canvas.width, canvas.height);
+          record.mosaicCanvas = canvas;
+        }
+        if (record.visual !== record.mosaicCanvas) {
+          record.visual.replaceWith(record.mosaicCanvas);
+          record.visual = record.mosaicCanvas;
+        }
+      } else if (record.visual !== record.originalImage) {
+        record.visual.replaceWith(record.originalImage);
+        record.visual = record.originalImage;
+      }
+    }
+
+    function createTile(jamo, roomId) {
+      const element = document.createElement("div");
+      const motion = document.createElement("div");
+      const image = document.createElement("img");
+
+      element.className = "jamo-tile";
+      motion.className = "jamo-motion";
+
+      image.alt = jamo;
+      image.draggable = false;
+
+      motion.appendChild(image);
+      element.appendChild(motion);
+
+      const stretch = 1;
+      const puzzleAngles = [0, 90, 180, 270];
+      if (roomId === "mother" && !elasticJamos.has(jamo)) {
+        for (let i = puzzleAngles.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [puzzleAngles[i], puzzleAngles[j]] = [puzzleAngles[j], puzzleAngles[i]];
+        }
+      }
+
+      const record = {
+        jamo,
+        roomId,
+        wordStart: false,
+        originalImage: image,
+        imageLoaded: false,
+        imageSettled: false,
+        puzzleAngles,
+        motherAnimated: false,
+        mosaicCanvas: null,
+        livingFilter: roomId === "living" ? createLivingFilter() : "none",
+        stretchX: stretch,
+        stretchY: 1 / stretch,
+        element,
+        motion,
+        visual: image,
+        naturalWidth: 100,
+        naturalHeight: 100,
+        randomX: random(0, 1),
+        randomY: random(0, 1),
+        randomRotation: random(-35, 35),
+        scatterPosition: null
+      };
+
+      function finishLoading() {
+        refreshRoomVisual(record);
+        scheduleLayout(roomId);
+
+        requestAnimationFrame(() => {
+          if (roomId !== currentRoom) return;
+          if (!element.isConnected) return;
+
+          layoutImages();
+          if (roomId !== "mother") applyElasticAnimation(record);
+        });
+      }
+
+      image.addEventListener("load", () => {
+        record.naturalWidth = image.naturalWidth;
+        record.naturalHeight = image.naturalHeight;
+        record.imageLoaded = true;
+        record.imageSettled = true;
+
+        finishLoading();
+      }, { once: true });
+
+      image.addEventListener("error", () => {
+        const fallback = document.createElement("span");
+
+        fallback.className = "fallback";
+        fallback.textContent = jamo;
+
+        image.replaceWith(fallback);
+        record.visual = fallback;
+        record.imageSettled = true;
+
+        finishLoading();
+      }, { once: true });
+
+      image.src = jamoImages[jamo];
+
+      return record;
+    }
+
+  
+
+    // 왼쪽 아래부터 겹치지 않는 빈 사각형을 찾아 배치한다.
+    function motherSplitFree(freeRects, used) {
+      const result = [];
+      for (const f of freeRects) {
+        if (used.x >= f.x + f.w || used.x + used.w <= f.x ||
+            used.y >= f.y + f.h || used.y + used.h <= f.y) {
+          result.push(f);
+          continue;
+        }
+        if (used.x > f.x) result.push({ x: f.x, y: f.y, w: used.x - f.x, h: f.h });
+        if (used.x + used.w < f.x + f.w) result.push({
+          x: used.x + used.w, y: f.y, w: f.x + f.w - used.x - used.w, h: f.h
+        });
+        if (used.y > f.y) result.push({ x: f.x, y: f.y, w: f.w, h: used.y - f.y });
+        if (used.y + used.h < f.y + f.h) result.push({
+          x: f.x, y: used.y + used.h, w: f.w, h: f.y + f.h - used.y - used.h
+        });
+      }
+      return result.filter((r, i) => r.w > 0.001 && r.h > 0.001 &&
+        !result.some((q, j) => j !== i &&
+          q.x <= r.x && q.y <= r.y && q.x + q.w >= r.x + r.w &&
+          q.y + q.h >= r.y + r.h &&
+          (q.x !== r.x || q.y !== r.y || q.w !== r.w || q.h !== r.h || j < i)));
+    }
+
+    function motherFindSlot(freeRects, width, height, angles) {
+      for (const angle of angles) {
+        const sideways = angle === 90 || angle === 270;
+        const w = sideways ? height : width;
+        const h = sideways ? width : height;
+        let best = null;
+        for (const f of freeRects) {
+          if (w > f.w + 0.000001 || h > f.h + 0.000001) continue;
+          if (!best || f.y < best.y || (f.y === best.y && f.x < best.x)) {
+            best = { x: f.x, y: f.y, w, h, angle };
+          }
+        }
+        if (best) return best;
+      }
+      return null;
+    }
+
+    function motherImageTransform(angle, w, h) {
+      switch (angle) {
+        case 90: return `translateX(${h}px) rotate(90deg)`;
+        case 180: return `translate(${w}px, ${h}px) rotate(180deg)`;
+        case 270: return `translateY(${w}px) rotate(270deg)`;
+        default: return "none";
+      }
+    }
+
+    function layoutMotherPuzzle() {
+      const state = roomStates.mother;
+      const width = Math.max(1, scene.clientWidth);
+      const height = Math.max(1, scene.clientHeight);
+      const pageViews = state.motherPageViews || (state.motherPageViews = new Map());
+      let page = 0;
+      let hasNormal = false;
+      let free = [{ x: 0, y: 0, w: width, h: height }];
+      let waiting = false;
+      const livePages = new Set([0]);
+
+      function getPage(index) {
+        livePages.add(index);
+        let view = pageViews.get(index);
+        if (!view) {
+          view = document.createElement("div");
+          view.className = "mother-puzzle-page";
+          pageViews.set(index, view);
+        }
+        Object.assign(view.style, {
+          position: "absolute", overflow: "hidden",
+          left: `${index * width}px`, top: "0px",
+          width: `${width}px`, height: `${height}px`
+        });
+        if (view.parentNode !== imageWorld) imageWorld.appendChild(view);
+        return view;
+      }
+
+      getPage(0);
+      for (const record of state.tiles) {
+        const tile = record.element;
+        // 실제 크기를 알기 전에는 임시 크기로 공간을 점유하지 않는다.
+        if (waiting || !record.imageSettled) {
+          waiting = true;
+          tile.style.visibility = "hidden";
+          continue;
+        }
+        const elastic = elasticJamos.has(record.jamo);
+        const scale = elastic ? ROOM_EFFECTS.motherElasticScale : rooms.mother.scale;
+        const w = record.naturalWidth * scale;
+        const h = record.naturalHeight * scale;
+        let x, y, boxW = w, boxH = h, angle = 0;
+
+        if (elastic) {
+          x = width * (0.08 + record.randomX * 0.84) - w / 2;
+          y = height * (0.12 + record.randomY * 0.70) - h / 2;
+        } else {
+          let slot = motherFindSlot(free, w, h, record.puzzleAngles);
+          if (!slot && hasNormal) {
+            page++;
+            hasNormal = false;
+            free = [{ x: 0, y: 0, w: width, h: height }];
+            slot = motherFindSlot(free, w, h, record.puzzleAngles);
+          }
+          if (!slot) {
+            // 40% 크기조차 화면보다 크면 더 축소하지 않고 전용 페이지에서 잘라 보인다.
+            angle = record.puzzleAngles[0];
+            boxW = angle % 180 ? h : w;
+            boxH = angle % 180 ? w : h;
+            slot = { x: 0, y: 0, w: boxW, h: boxH, angle };
+            free = [];
+          } else {
+            free = motherSplitFree(free, slot);
+          }
+          hasNormal = true;
+          angle = slot.angle;
+          boxW = slot.w;
+          boxH = slot.h;
+          x = slot.x;
+          y = height - slot.y - slot.h;
+        }
+
+        record.motherPage = page;
+        const view = getPage(page);
+        if (tile.parentNode !== view) view.appendChild(tile);
+        Object.assign(tile.style, {
+          visibility: "visible", left: `${x}px`, top: `${y}px`,
+          width: `${boxW}px`, height: `${boxH}px`,
+          transform: "none", zIndex: elastic ? "2" : "1"
+        });
+        Object.assign(record.visual.style, {
+          width: `${w}px`, height: `${h}px`,
+          transform: motherImageTransform(angle, w, h)
+        });
+        if (elastic && !record.motherAnimated) {
+          record.motherAnimated = true;
+          applyElasticAnimation(record);
+        }
+      }
+
+      for (const [index, view] of pageViews) {
+        if (!livePages.has(index)) {
+          view.remove();
+          pageViews.delete(index);
+        }
+      }
+      const sameSize = state.motherViewportWidth === width && state.motherViewportHeight === height;
+      const animate = state.motherCameraPage != null && sameSize && state.motherCameraPage !== page;
+      if (animate) {
+        // 이전 페이지에서 새 페이지로 넘어갈 때만 카메라를 이동한다.
+        imageWorld.style.transition = "none";
+        imageWorld.style.transform = `translate(${-state.motherCameraPage * width}px, 0px)`;
+        void imageWorld.offsetWidth;
+        imageWorld.style.transition = window.matchMedia("(prefers-reduced-motion: reduce)").matches
+          ? "none" : `transform ${ROOM_EFFECTS.motherSlideMs}ms cubic-bezier(.22,.68,.22,1)`;
+      } else if (!sameSize || state.motherCameraPage == null) {
+        imageWorld.style.transition = "none";
+      }
+      imageWorld.style.transform = `translate(${-page * width}px, 0px)`;
+      state.motherCameraPage = page;
+      state.motherViewportWidth = width;
+      state.motherViewportHeight = height;
+    }
+
+    function layoutImages() {
+      if (currentRoom === "mother") {
+        layoutMotherPuzzle();
+        return;
+      }
+      imageWorld.style.transition = "none";
+      const room = rooms[currentRoom];
+      const state = roomStates[currentRoom];
+
+      const viewportWidth = scene.clientWidth;
+      const viewportHeight = scene.clientHeight;
+
+      let cursorX = 0;
+      let towerTop = viewportHeight;
+      let flowTileCount = 0;
+
+      const scatterRecords = [];
+
+      state.tiles.forEach(record => {
+        const isSpecialJamo = elasticJamos.has(record.jamo);
+        const isElastic = isSpecialJamo && currentRoom !== "kitchen";
+
+        const isRotated =
+          !isElastic &&
+          room.rotation === -90;
+
+const extraScale = isSpecialJamo ? 0.5 : 1;
+
+const originalWidth =
+  record.naturalWidth * room.scale * extraScale * record.stretchX;
+
+const originalHeight =
+  record.naturalHeight * room.scale * extraScale * record.stretchY;
+
+        const width = isRotated
+          ? originalHeight
+          : originalWidth;
+
+        const height = isRotated
+          ? originalWidth
+          : originalHeight;
+
+        const tile = record.element;
+        const visual = record.visual;
+
+        tile.style.width = `${width}px`;
+        tile.style.height = `${height}px`;
+
+        visual.style.width = `${originalWidth}px`;
+        visual.style.height = `${originalHeight}px`;
+
+        visual.style.transform = isRotated
+          ? `translateY(${originalWidth}px) rotate(-90deg)`
+          : "none";
+
+        tile.style.transform = "none";
+        tile.style.transformOrigin = "center";
+        tile.style.zIndex = isElastic ? "2" : "1";
+
+
+        if (isElastic) {
+          scatterRecords.push({
+            record,
+            width,
+            height
+          });
+
+          return;
+        }
+
+        let x = 0;
+        let y = 0;
+
+        switch (room.mode) {
+          case "row":
+            x = cursorX;
+            y = viewportHeight - height;
+
+            cursorX += width + IMAGE_GAP;
+            flowTileCount++;
+            break;
+
+          case "tower":
+            x = (viewportWidth - width) / 2;
+            y = towerTop - height;
+
+            towerTop = y - IMAGE_GAP;
+            flowTileCount++;
+            break;
+
+          case "scatter":
+            x = viewportWidth * record.randomX - width / 2;
+            y = viewportHeight * record.randomY - height / 2;
+
+            tile.style.transform =
+              `rotate(${record.randomRotation}deg)`;
+            break;
+        }
+
+        tile.style.left = `${x}px`;
+        tile.style.top = `${y}px`;
+      });
+
+      const cameraX =
+        flowTileCount > 0 && room.mode === "row"
+          ? Math.max(
+              0,
+              cursorX - IMAGE_GAP - viewportWidth
+            )
+          : 0;
+
+      const cameraY =
+        flowTileCount > 0 && room.mode === "tower"
+          ? Math.min(
+              0,
+              towerTop + IMAGE_GAP
+            )
+          : 0;
+
+      imageWorld.style.transform =
+        `translate(${-cameraX}px, ${-cameraY}px)`;
+
+      scatterRecords.forEach(({ record, width, height }) => {
+        if (!record.scatterPosition) {
+          record.scatterPosition = {
+            x:
+              viewportWidth *
+              (0.08 + record.randomX * (0.92 - 0.08)) +
+              cameraX,
+
+            y:
+              viewportHeight *
+              (0.12 + record.randomY * (0.82 - 0.12)) +
+              cameraY
+          };
+        }
+
+        record.element.style.left =
+          `${record.scatterPosition.x - width / 2}px`;
+
+        record.element.style.top =
+          `${record.scatterPosition.y - height / 2}px`;
+      });
+    }
+
+  
+
+    function syncJamoImages() {
+      const room = rooms[currentRoom];
+
+      if (!room.typing) return;
+
+      if (!composing) {
+        sanitizeHangulInput();
+      }
+
+      const state = roomStates[currentRoom];
+      const previousText = state.text;
+      const nextText = filterHangul(imeInput.value);
+
+      updateChronologicalRecord(
+        currentRoom,
+        previousText,
+        nextText
+      );
+
+      
+      window.typingMp3?.capture(currentRoom, previousText, nextText);
+      playChangedTypingSounds(
+        previousText,
+        nextText
+      );
+
+      state.text = nextText;
+
+      if (room.mode === "none") return;
+
+      const entries = textToImageEntries(state.text);
+      const jamos = entries.map(entry => entry.jamo);
+
+      let sharedLength = 0;
+
+      while (
+        sharedLength < state.tiles.length &&
+        sharedLength < jamos.length &&
+        state.tiles[sharedLength].jamo === jamos[sharedLength]
+      ) {
+        sharedLength++;
+      }
+
+      while (state.tiles.length > sharedLength) {
+        state.tiles.pop().element.remove();
+      }
+
+      for (let i = sharedLength; i < jamos.length; i++) {
+        const record = createTile(
+          jamos[i],
+          currentRoom
+        );
+
+        state.tiles.push(record);
+        imageWorld.appendChild(record.element);
+      }
+
+      state.tiles.forEach((record, index) => {
+        record.wordStart = entries[index].wordStart;
+        refreshRoomVisual(record);
+      });
+
+      layoutImages();
+    }
+
+
+
+    /* =========================
+       기록 페이지 나누기 / PDF 다운로드
+       메일 발송이나 서버 호출은 하지 않음
+    ========================= */
+
+    const PDF_WIDTH = 720;
+    const PDF_HEIGHT = PDF_WIDTH * 297 / 210;
+    const MAX_PDF_PAGES = 200;
+    let pdfDownloading = false;
+    let previewBuilding = false;
+    let recordPages = [];
+    let recordLayout = null;
+    let recordBuildId = 0;
+    let pdfLibraryPromise = null;
+    let recordResizeTimer = null;
+
+    const paperGroup = previewDialog.querySelector('.preview-paper-group');
+    const firstPaper = previewDialog.querySelector('.preview-paper');
+    const paperActionArea = firstPaper.querySelector('.paper-send-area');
+
+    // 조작 버튼은 종이 밖으로 이동하여 기록 글씨와 겹치지 않음
+    paperGroup.appendChild(paperActionArea);
+
+    function captureRecordLayout() {
+      const textStyle = getComputedStyle(previewContent);
+      const areaStyle = getComputedStyle(paperTextArea);
+      const width = firstPaper.clientWidth;
+      const height = firstPaper.clientHeight;
+      const scale = PDF_WIDTH / width;
+      const fontSize = parseFloat(textStyle.fontSize) || 18;
+      const lineHeight = parseFloat(textStyle.lineHeight);
+      return {
+        fontFamily: textStyle.fontFamily,
+        fontWeight: textStyle.fontWeight,
+        fontStyle: textStyle.fontStyle,
+        fontSize: fontSize * scale,
+        lineHeight: Number.isFinite(lineHeight) ? lineHeight / fontSize : 1.9,
+        letterSpacing: (parseFloat(textStyle.letterSpacing) || 0) * scale,
+        color: textStyle.color,
+        top: (parseFloat(areaStyle.top) || 0) / height,
+        right: (parseFloat(areaStyle.right) || 0) / width,
+        bottom: (parseFloat(areaStyle.bottom) || 0) / height,
+        left: (parseFloat(areaStyle.left) || 0) / width
+      };
+    }
+
+    function createRenderStage(layout) {
+      const stage = document.createElement('div');
+      stage.className = 'pdf-render-stage';
+      stage.setAttribute('aria-hidden', 'true');
+      const page = document.createElement('article');
+      page.className = 'pdf-render-page';
+      const area = document.createElement('div');
+      area.className = 'pdf-render-area';
+      Object.assign(area.style, {
+        top: `${layout.top * 100}%`,
+        right: `${layout.right * 100}%`,
+        bottom: `${layout.bottom * 100}%`,
+        left: `${layout.left * 100}%`
+      });
+      const text = document.createElement('p');
+      text.className = 'pdf-render-text';
+      Object.assign(text.style, {
+        fontFamily: layout.fontFamily,
+        fontWeight: layout.fontWeight,
+        fontStyle: layout.fontStyle,
+        fontSize: `${layout.fontSize}px`,
+        lineHeight: String(layout.lineHeight),
+        letterSpacing: `${layout.letterSpacing}px`,
+        color: layout.color
+      });
+      area.appendChild(text);
+      page.appendChild(area);
+      stage.appendChild(page);
+      document.body.appendChild(stage);
+      return { stage, page, area, text };
+    }
+
+    function splitRecordIntoPages(value, layout) {
+      const render = createRenderStage(layout);
+      try {
+        const segments = typeof Intl.Segmenter === 'function'
+          ? Array.from(new Intl.Segmenter('ko', { granularity: 'grapheme' }).segment(value), item => item.segment)
+          : Array.from(value);
+        if (!segments.length) return [''];
+        const pages = [];
+        let offset = 0;
+        while (offset < segments.length) {
+          if (pages.length >= MAX_PDF_PAGES) {
+            throw new Error('기록이 200페이지를 넘습니다. 분량을 줄인 뒤 다시 저장해주세요.');
+          }
+          let low = 0;
+          let high = segments.length - offset;
+          // 실제 폰트와 줄바꿈으로 한 장에 들어갈 최대 분량을 측정
+          while (low < high) {
+            const middle = Math.ceil((low + high) / 2);
+            render.text.textContent = segments.slice(offset, offset + middle).join('');
+            if (render.text.getBoundingClientRect().height <= render.area.getBoundingClientRect().height - 0.5) {
+              low = middle;
+            } else {
+              high = middle - 1;
+            }
+          }
+          if (low === 0) {
+            throw new Error('현재 글자 크기가 PDF의 글 영역보다 큽니다. 글자 크기나 여백을 조정해주세요.');
+          }
+          pages.push(segments.slice(offset, offset + low).join(''));
+          offset += low;
+        }
+        return pages;
+      } finally {
+        render.stage.remove();
+      }
+    }
+
+    function updateRecordPaperPages(pages) {
+      paperGroup.querySelectorAll('.record-extra-page').forEach(page => page.remove());
+      previewContent.textContent = pages[0] || '';
+      paperTextArea.scrollTop = 0;
+      let previousPaper = firstPaper;
+      for (let index = 1; index < pages.length; index++) {
+        const paper = document.createElement('article');
+        paper.className = 'preview-paper record-extra-page';
+        paper.setAttribute('aria-label', `기록 ${index + 1}페이지`);
+        const area = document.createElement('div');
+        area.className = 'paper-text-area';
+        const text = document.createElement('p');
+        text.className = 'preview-content';
+        text.textContent = pages[index];
+        area.appendChild(text);
+        paper.appendChild(area);
+        previousPaper.after(paper);
+        previousPaper = paper;
+      }
+    }
+
+    async function rebuildRecordPages() {
+      const buildId = ++recordBuildId;
+      previewBuilding = true;
+      paperSendButton.disabled = true;
+      try {
+        const style = getComputedStyle(previewContent);
+        await document.fonts.load(`${style.fontStyle} ${style.fontWeight} ${style.fontSize} ${style.fontFamily}`);
+        await document.fonts.ready;
+        if (!previewDialog.open || buildId !== recordBuildId) return;
+        const layout = captureRecordLayout();
+        const pages = splitRecordIntoPages(previewSnapshot, layout);
+        recordLayout = layout;
+        recordPages = pages;
+        updateRecordPaperPages(pages);
+      } finally {
+        if (buildId === recordBuildId) {
+          previewBuilding = false;
+          paperSendButton.disabled = false;
+        }
+      }
+    }
+
+    async function openRecordPreview() {
+      syncJamoImages();
+      window.typingMp3?.finishSentence();
+      previewSnapshot = getChronologicalText();
+      previewContent.textContent = previewSnapshot;
+      recordPages = [];
+      recordLayout = null;
+      if (!previewDialog.open) previewDialog.showModal();
+      previewScroll.scrollTop = 0;
+      try {
+        await rebuildRecordPages();
+        if (previewDialog.open) paperSendButton.focus({ preventScroll: true });
+      } catch (error) {
+        alert(`기록 페이지 생성에 실패했습니다.\n${error.message}`);
+      }
+    }
+
+    function closeRecordPreview() {
+      if (pdfDownloading) return;
+      recordBuildId++;
+      previewBuilding = false;
+      if (mailDialog.open) mailDialog.close();
+      previewDialog.close();
+    }
+
+    previewDialog.addEventListener('click', event => {
+      if (mailDialog.open || pdfDownloading) return;
+      if (event.target.closest('.preview-paper, .paper-trash-button, .paper-send-area')) return;
+      closeRecordPreview();
+    });
+
+    function positionMailDialog() {
+      if (!mailDialog.open) return;
+      const buttonRect = paperSendButton.getBoundingClientRect();
+      const popupRect = mailDialog.getBoundingClientRect();
+      const vv = window.visualViewport;
+      const leftEdge = (vv ? vv.offsetLeft : 0) + 12;
+      const topEdge = (vv ? vv.offsetTop : 0) + 12;
+      const viewportWidth = vv ? vv.width : document.documentElement.clientWidth;
+      const viewportHeight = vv ? vv.height : window.innerHeight;
+      const maxLeft = Math.max(leftEdge, leftEdge + viewportWidth - popupRect.width - 24);
+      const maxTop = Math.max(topEdge, topEdge + viewportHeight - popupRect.height - 24);
+      let top = buttonRect.top - popupRect.height - 8;
+      if (top < topEdge) top = buttonRect.bottom + 8;
+      mailDialog.style.left = `${Math.min(Math.max(buttonRect.right - popupRect.width, leftEdge), maxLeft)}px`;
+      mailDialog.style.top = `${Math.min(Math.max(top, topEdge), maxTop)}px`;
+    }
+
+    function openMailDialog() {
+      if (pdfDownloading || previewBuilding) return;
+      if (!recordLayout || !recordPages.length) {
+        alert('기록 페이지를 먼저 준비해주세요. 기록 창을 닫았다가 다시 열어주세요.');
+        return;
+      }
+      mailRecipient.value = '';
+      mailStatus.textContent = '';
+      mailDialog.showModal();
+      positionMailDialog();
+      mailRecipient.focus({ preventScroll: true });
+      requestAnimationFrame(positionMailDialog);
+    }
+
+    function closeMailDialog() {
+      if (pdfDownloading) return;
+      mailDialog.close();
+    }
+
+    paperSendButton.addEventListener('click', openMailDialog);
+    mailDialog.addEventListener('click', event => {
+      if (event.target !== mailDialog) return;
+      const rect = mailDialog.getBoundingClientRect();
+      if (event.clientX < rect.left || event.clientX > rect.right || event.clientY < rect.top || event.clientY > rect.bottom) closeMailDialog();
+    });
+
+    function loadScriptFrom(src) {
+      return new Promise((resolve, reject) => {
+        const script = document.createElement('script');
+        const timeout = setTimeout(() => {
+          script.remove();
+          reject(new Error('라이브러리 불러오기 시간 초과'));
+        }, 15000);
+        script.src = src;
+        script.onload = () => { clearTimeout(timeout); resolve(); };
+        script.onerror = () => { clearTimeout(timeout); script.remove(); reject(new Error('라이브러리 불러오기 실패')); };
+        document.head.appendChild(script);
+      });
+    }
+
+    async function loadLibrary(paths, isReady) {
+      if (isReady()) return;
+      for (const src of paths) {
+        try {
+          await loadScriptFrom(src);
+          if (isReady()) return;
+        } catch (_) {}
+      }
+      throw new Error('PDF 도구를 불러오지 못했습니다. 인터넷 연결 또는 vendor 폴더의 라이브러리 파일을 확인해주세요.');
+    }
+
+    function ensurePdfLibraries() {
+      if (!pdfLibraryPromise) {
+        pdfLibraryPromise = (async () => {
+          await loadLibrary([
+            './vendor/html2canvas.min.js',
+            'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js'
+          ], () => typeof window.html2canvas === 'function');
+          await loadLibrary([
+            './vendor/jspdf.umd.min.js',
+            'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js'
+          ], () => !!(window.jspdf && window.jspdf.jsPDF));
+        })().catch(error => { pdfLibraryPromise = null; throw error; });
+      }
+      return pdfLibraryPromise;
+    }
+
+    function createRecordFilename(email) {
+      const date = new Date();
+      const pad = number => String(number).padStart(2, '0');
+      const timestamp = `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}_${pad(date.getHours())}${pad(date.getMinutes())}${pad(date.getSeconds())}-${String(date.getMilliseconds()).padStart(3, '0')}`;
+      // 파일명에서 사용할 수 없는 문자는 퍼센트 인코딩
+      const safeEmail = email.replace(/[<>:"/\\|?*\u0000-\u001f]/g, character => encodeURIComponent(character));
+      return `${safeEmail}_${timestamp}.pdf`;
+    }
+
+    function yieldToScreen() {
+      return new Promise(resolve => requestAnimationFrame(() => setTimeout(resolve, 0)));
+    }
+
+    mailForm.addEventListener('submit', async event => {
+      event.preventDefault();
+      if (pdfDownloading || !mailForm.reportValidity()) return;
+      const email = mailRecipient.value.trim();
+      if (!recordLayout || !recordPages.length) return;
+      const soundSnapshot = window.typingMp3.snapshot();
+      const pages = [...recordPages];
+      const layout = { ...recordLayout };
+      const button = mailForm.querySelector('button[type="submit"]');
+      let render = null;
+      pdfDownloading = true;
+      button.disabled = true;
+      mailRecipient.disabled = true;
+      paperTrashButton.disabled = true;
+      paperSendButton.disabled = true;
+      button.textContent = '생성 중…';
+      mailStatus.textContent = 'PDF 도구를 준비하고 있습니다…';
+      try {
+        await ensurePdfLibraries();
+        await document.fonts.ready;
+        const pdf = new window.jspdf.jsPDF({
+          orientation: 'portrait',
+          unit: 'mm',
+          format: 'a4',
+          compress: true
+        });
+        pdf.setProperties({ title: '우리 집의 기록', subject: '전시 관객 기록' });
+        render = createRenderStage(layout);
+        for (let index = 0; index < pages.length; index++) {
+          mailStatus.textContent = `PDF 생성 중… ${index + 1} / ${pages.length}페이지`;
+          render.text.textContent = pages[index];
+          await yieldToScreen();
+          const canvas = await window.html2canvas(render.page, {
+            scale: 2,
+            backgroundColor: '#ffffff',
+            useCORS: true,
+            logging: false,
+            scrollX: 0,
+            scrollY: 0,
+            windowWidth: 1200,
+            windowHeight: 1200
+          });
+          if (!canvas.width || !canvas.height) throw new Error('PDF 페이지 이미지를 생성하지 못했습니다.');
+          if (index > 0) pdf.addPage('a4', 'portrait');
+          pdf.addImage(canvas, 'PNG', 0, 0, 210, 297, undefined, 'FAST');
+          canvas.width = 1;
+          canvas.height = 1;
+        }
+        await window.typingMp3.saveZip(
+          pdf.output('blob'),
+          soundSnapshot,
+          email,
+          message => { mailStatus.textContent = message; }
+        );
+
+// 이메일과 상태 문구 비우기
+mailRecipient.value = "";
+mailStatus.textContent = "";
+
+// 다운로드 요청 후 입력창 닫기
+mailDialog.close();
+      } catch (error) {
+        mailStatus.textContent = `기록 ZIP 생성 실패: ${error.message}\n기록은 지워지지 않았습니다. 확인 후 다시 시도해주세요.`;
+      } finally {
+        if (render) render.stage.remove();
+        pdfDownloading = false;
+        button.disabled = false;
+        mailRecipient.disabled = false;
+        paperTrashButton.disabled = false;
+        paperSendButton.disabled = false;
+        button.textContent = '기록 저장';
+        positionMailDialog();
+      }
+    });
+
+    window.addEventListener('resize', () => {
+      clearTimeout(recordResizeTimer);
+      recordResizeTimer = setTimeout(() => {
+        if (!previewDialog.open || mailDialog.open || pdfDownloading) return;
+        rebuildRecordPages().catch(error => alert(error.message));
+      }, 180);
+    });
+
+
+    function tryEnterStorage() {
+      if (
+        !keypadDialog.open ||
+        !storageKeyUnlocked ||
+        !storagePasswordUnlocked
+      ) {
+        return;
+      }
+
+      closeStorageKeypad();
+      renderRoom("storage", true);
+    }
+
+    function placeStorageKeyHome() {
+      storageKey.style.left = "6px";
+      storageKey.style.top = "26px";
+    }
+
+    function setStorageKeyLock(unlocked) {
+      storageKeyUnlocked = unlocked;
+      storageKeyZone.hidden = unlocked;
+
+      storageKeyhole.classList.toggle(
+        "is-unlocked",
+        unlocked
+      );
+
+      storageKeyhole.classList.remove("is-ready");
+
+      storageKeyhole.setAttribute(
+        "aria-label",
+        unlocked ? "열쇠 잠금 해제됨" : "잠긴 열쇠구멍"
+      );
+    }
+
+    function isOverStorageKeyhole(x, y) {
+      const rect = storageKeyhole.getBoundingClientRect();
+
+      return Math.hypot(
+        x - rect.left - rect.width / 2,
+        y - rect.top - rect.height / 2
+      ) <= rect.width / 2 + 10;
+    }
+
+    function stopKeyDrag() {
+      const drag = keyDrag;
+      keyDrag = null;
+
+      if (
+        drag &&
+        storageKey.hasPointerCapture(drag.id)
+      ) {
+        storageKey.releasePointerCapture(drag.id);
+      }
+
+      storageKey.classList.remove("is-dragging");
+      storageKeyhole.classList.remove("is-ready");
+
+      placeStorageKeyHome();
+    }
+
+    storageKey.addEventListener("pointerdown", event => {
+      if (storageKeyUnlocked || event.button !== 0) return;
+
+      event.preventDefault();
+
+      const rect = storageKey.getBoundingClientRect();
+      const zone = storageKeyZone.getBoundingClientRect();
+
+      keyDrag = {
+        id: event.pointerId,
+        dx: event.clientX - rect.left,
+        dy: event.clientY - rect.top
+      };
+
+      storageKey.style.left = `${rect.left - zone.left}px`;
+      storageKey.style.top = `${rect.top - zone.top}px`;
+
+      storageKey.classList.add("is-dragging");
+      storageKey.setPointerCapture(event.pointerId);
+    });
+
+    storageKey.addEventListener("pointermove", event => {
+      if (
+        !keyDrag ||
+        event.pointerId !== keyDrag.id
+      ) {
+        return;
+      }
+
+      const zone = storageKeyZone.getBoundingClientRect();
+
+      storageKey.style.left =
+        `${event.clientX - keyDrag.dx - zone.left}px`;
+
+      storageKey.style.top =
+        `${event.clientY - keyDrag.dy - zone.top}px`;
+
+      storageKeyhole.classList.toggle(
+        "is-ready",
+        isOverStorageKeyhole(
+          event.clientX,
+          event.clientY
+        )
+      );
+    });
+
+    storageKey.addEventListener("pointerup", event => {
+      if (
+        !keyDrag ||
+        event.pointerId !== keyDrag.id
+      ) {
+        return;
+      }
+
+      const success = isOverStorageKeyhole(
+        event.clientX,
+        event.clientY
+      );
+
+      stopKeyDrag();
+
+      if (!success) return;
+
+      setStorageKeyLock(true);
+      tryEnterStorage();
+
+      if (keypadDialog.open) {
+        keypadGrid.querySelector("button")
+          .focus({ preventScroll: true });
+      }
+    });
+
+    storageKey.addEventListener(
+      "pointercancel",
+      stopKeyDrag
+    );
+
+    storageKey.addEventListener("lostpointercapture", () => {
+      if (keyDrag) stopKeyDrag();
+    });
+
+ 
+
+    function resetStorageKeypad() {
+      if (keypadErrorTimer !== null) {
+        clearTimeout(keypadErrorTimer);
+        keypadErrorTimer = null;
+      }
+
+      stopKeyDrag();
+      setStorageKeyLock(false);
+
+      storagePasswordUnlocked = false;
+      keypadValue = "";
+      keypadLocked = false;
+
+      keypadDisplay.setAttribute(
+        "aria-label",
+        "입력한 암호"
+      );
+
+      keypadDisplay.textContent = "";
+      keypadDialog.classList.remove("is-error");
+    }
+
+    function openStorageKeypad() {
+      if (keypadDialog.open) return;
+
+      resetStorageKeypad();
+
+      imeInput.blur();
+      syncJamoImages();
+
+      keypadDialog.showModal();
+      storageKey.blur();
+    }
+
+    function closeStorageKeypad() {
+      resetStorageKeypad();
+
+      if (keypadDialog.open) {
+        keypadDialog.close();
+      }
+    }
+
+    function showKeypadError() {
+      keypadLocked = true;
+      keypadDialog.classList.add("is-error");
+
+      keypadErrorTimer = setTimeout(() => {
+        keypadErrorTimer = null;
+        keypadValue = "";
+        keypadLocked = false;
+
+        keypadDisplay.textContent = "";
+        keypadDialog.classList.remove("is-error");
+      }, 360);
+    }
+
+    function enterStorageDigit(digit) {
+      if (
+        !keypadDialog.open ||
+        storagePasswordUnlocked ||
+        keypadLocked
+      ) {
+        return;
+      }
+
+      keypadValue += digit;
+      keypadDisplay.textContent = keypadValue;
+
+      if (keypadValue.length < STORAGE_PASSWORD.length) {
+        return;
+      }
+
+      if (keypadValue === STORAGE_PASSWORD) {
+        storagePasswordUnlocked = true;
+
+        keypadDisplay.setAttribute(
+          "aria-label",
+          "비밀번호 확인 완료"
+        );
+
+        tryEnterStorage();
+        return;
+      }
+
+      showKeypadError();
+    }
+
+    keypadGrid.addEventListener("click", event => {
+      const button =
+        event.target.closest(".keypad-number");
+
+      if (!button) return;
+
+      enterStorageDigit(button.dataset.digit);
+    });
+
+    keypadDialog.addEventListener("click", event => {
+      if (
+        event.target !== keypadDialog &&
+        !event.target.classList.contains("storage-lock-group")
+      ) {
+        return;
+      }
+
+      closeStorageKeypad();
+    });
+
+  
+
+    function createTextButton({ label, target, position }) {
+      const button = document.createElement("button");
+
+      button.type = "button";
+      button.className = `nav-text position-${position}`;
+      button.textContent = label;
+
+      button.addEventListener("pointerdown", () => {
+        if (!rooms[currentRoom].typing) return;
+
+        imeInput.blur();
+        syncJamoImages();
+      });
+
+      button.addEventListener("click", () => {
+        moveTo(target);
+      });
+
+      return button;
+    }
+
+    function createPreviewButton() {
+      const button = document.createElement("button");
+
+      button.type = "button";
+      button.className = "nav-text position-center";
+      button.textContent = "기록";
+
+      button.addEventListener("click", openRecordPreview);
+
+      return button;
+    }
+
+    function renderRoom(roomId, moveFocus = false) {
+      window.typingMp3?.finishSentence();
+      const room = rooms[roomId];
+      const state = roomStates[roomId];
+
+      imageWorld.style.transition = "none";
+      roomStates.mother.motherCameraPage = null;
+      currentRoom = roomId;
+      composing = false;
+
+      startRoomVisit(roomId);
+
+      scene.style.setProperty("--room-color", room.color);
+      scene.setAttribute("aria-label", room.name);
+
+      roomImage.style.backgroundImage = room.image
+        ? `url("${room.image}")`
+        : "none";
+
+      const links = [...room.links];
+
+      if (room.parent) {
+        links.push({
+          label:
+            room.backLabel ||
+            `${rooms[room.parent].name}`,
+          target: room.parent,
+          position: "bottom"
+        });
+      }
+
+      const buttons = links.map(createTextButton);
+
+      if (roomId === "studio") {
+        buttons.push(createPreviewButton());
+      }
+
+      navigation.replaceChildren(...buttons);
+
+      imageWorld.replaceChildren(
+        ...state.tiles.map(record => record.element)
+      );
+
+      imeInput.disabled = !room.typing;
+      imeInput.value = room.typing ? state.text : "";
+
+      layoutImages();
+
+      document.title = `집`;
+
+      announcement.textContent =
+        `${room.name}에 도착했습니다.`;
+
+      if (!moveFocus) return;
+
+      if (room.typing) {
+        focusInput(true);
+      } else {
+        const focusTarget = roomId === "studio"
+          ? navigation.querySelector(".position-center")
+          : navigation.querySelector("button");
+
+        focusTarget?.focus({ preventScroll: true });
+      }
+    }
+
+    function moveTo(roomId) {
+      if (
+        !rooms[roomId] ||
+        roomId === currentRoom
+      ) {
+        return;
+      }
+
+      if (roomId === "storage") {
+        openStorageKeypad();
+        return;
+      }
+
+      if (rooms[currentRoom].typing) {
+        imeInput.blur();
+        syncJamoImages();
+      }
+
+      renderRoom(roomId, true);
+    }
+
+
+    imeInput.addEventListener("compositionstart", () => {
+      composing = true;
+    });
+
+    imeInput.addEventListener("input", event => {
+      if (event.isComposing) {
+        composing = true;
+      }
+
+      syncJamoImages();
+    });
+
+    imeInput.addEventListener("compositionend", () => {
+      composing = false;
+      syncJamoImages();
+    });
+
+    scene.addEventListener("click", event => {
+      if (event.target.closest("button, textarea")) return;
+      focusInput();
+    });
+
+
+    keypadDialog.addEventListener("cancel", event => {
+      event.preventDefault();
+      closeStorageKeypad();
+    });
+
+    mailDialog.addEventListener("cancel", event => {
+      event.preventDefault();
+      closeMailDialog();
+    });
+
+    previewDialog.addEventListener("cancel", event => {
+      event.preventDefault();
+
+      if (!mailDialog.open) {
+        closeRecordPreview();
+      }
+    });
+
+    document.addEventListener("keydown", event => {
+      if (keypadDialog.open) {
+        if (
+          event.key === "Escape" &&
+          !event.isComposing
+        ) {
+          event.preventDefault();
+          closeStorageKeypad();
+        }
+
+        return;
+      }
+
+      if (mailDialog.open) {
+        if (
+          event.key === "Escape" &&
+          !event.isComposing
+        ) {
+          event.preventDefault();
+          closeMailDialog();
+        }
+
+        return;
+      }
+
+      if (previewDialog.open) {
+        if (
+          event.key === "Escape" &&
+          !event.isComposing
+        ) {
+          event.preventDefault();
+          closeRecordPreview();
+        }
+
+        return;
+      }
+
+      if (
+        event.key !== "Escape" ||
+        event.isComposing ||
+        composing
+      ) {
+        return;
+      }
+
+      const parent = rooms[currentRoom].parent;
+
+      if (parent) {
+        event.preventDefault();
+        moveTo(parent);
+      }
+    });
+
+    /* =========================
+       화면 및 팝업 위치 갱신
+    ========================= */
+
+    window.addEventListener("resize", () => {
+      scheduleLayout(currentRoom);
+      positionMailDialog();
+    });
+
+    previewScroll.addEventListener(
+      "scroll",
+      positionMailDialog
+    );
+
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener(
+        "resize",
+        positionMailDialog
+      );
+
+      window.visualViewport.addEventListener(
+        "scroll",
+        positionMailDialog
+      );
+    }
+
+    /* =========================
+       모든 기록 버리기
+    ========================= */
+
+    function discardAllRecords() {
+      if (pdfDownloading || previewBuilding) return;
+      clearFollowKeyTimeouts();
+      window.typingMp3?.reset();
+
+      if (mailDialog.open) {
+        mailDialog.close();
+      }
+
+      Object.keys(rooms).forEach(roomId => {
+        const state = roomStates[roomId];
+
+        state.tiles.forEach(record => {
+          record.element.remove();
+        });
+
+        state.text = "";
+        state.tiles = [];
+        if (roomId === "mother") {
+          state.motherPageViews?.forEach(view => view.remove());
+          state.motherPageViews = new Map();
+          state.motherCameraPage = null;
+        }
+
+        roomCharacterOwners[roomId] = [];
+      });
+
+      visits.clear();
+      visitSequence = 0;
+      currentVisitId = 0;
+
+      startRoomVisit(currentRoom);
+
+      composing = false;
+      imeInput.value = "";
+
+      imageWorld.replaceChildren();
+      layoutImages();
+
+      previewSnapshot = "";
+      recordPages = [];
+      recordLayout = null;
+      paperGroup.querySelectorAll(".record-extra-page").forEach(page => page.remove());
+      previewContent.textContent = "";
+
+      mailStatus.textContent = "";
+
+      closeRecordPreview();
+
+      announcement.textContent =
+        "모든 공간의 기록을 버렸습니다.";
+
+      if (rooms[currentRoom].typing) {
+        focusInput(true);
+      } else {
+        navigation.querySelector(".position-center")
+          ?.focus({ preventScroll: true });
+      }
+    }
+
+    paperTrashButton.addEventListener(
+      "click",
+      discardAllRecords
+    );
+
+
+/* 문장별 사운드 기록 및 PDF + MP3 ZIP 저장 */
+window.typingMp3 = (() => {
+  const roomTokens = new Map(), sentences = [];
+  let active = null, libraryPromise = null;
+  function finishSentence() { active = null; }
+  function tokenize(text) {
+    const items = [];
+    let wordStart = true;
+    for (const char of Array.from(text.normalize('NFC'))) {
+      if (/\s/u.test(char)) {
+        items.push({key:char === '\n' ? '\n' : ' ', wordStart:false});
+        wordStart = true;
+      } else for (const jamo of decomposeCharacter(char)) {
+        items.push({key:jamo, wordStart}); wordStart = false;
+      }
+    }
+    return items;
+  }
+  function eventsFor(jamo, roomId, wordStart, time) {
+    if (!audioUnlocked || (roomId === 'kitchen' && !wordStart)) return [];
+    const events = [];
+    const rate = roomId === 'living' ? 2 : 1;
+    const gain = roomId === 'myroom' ? 0.5 : roomId === 'closet' ? CLOSET_SOUND_GAIN : 1;
+    const cutoff = roomId === 'closet' ? CLOSET_SOUND_CUTOFF : null;
+    function add(src, delay, volume) {
+      if (src) events.push({src,time:time + delay,gain:volume * gain,rate,cutoff});
+    }
+    add(jamoSounds[jamo],0,1);
+    const keys = jamoToEnglishKey[jamo];
+    if (keys) [...keys].forEach((key,index) => add(englishKeySounds[key], FOLLOW_KEY_DELAY / 1000 + index * FOLLOW_KEY_STEP_DELAY / 1000, FOLLOW_KEY_GAIN));
+    return events;
+  }
+  function capture(roomId, previous, nextText) {
+    if (previous === nextText) return;
+    const old = roomTokens.get(roomId) || tokenize(previous).map(t => ({...t,events:[],sentence:null}));
+    const next = tokenize(nextText);
+    let prefix = 0, suffix = 0;
+    while (prefix < old.length && prefix < next.length && old[prefix].key === next[prefix].key) prefix++;
+    while (suffix < old.length - prefix && suffix < next.length - prefix && old[old.length-1-suffix].key === next[next.length-1-suffix].key) suffix++;
+    const oldEnd = old.length-suffix, nextEnd = next.length-suffix;
+    old.slice(prefix,oldEnd).forEach(t => t.sentence?.tokens.delete(t));
+    const inserted = [], now = performance.now()/1000;
+    for (const item of next.slice(prefix,nextEnd)) {
+      const token = {...item,events:[],sentence:null};
+      if (item.key === '\n') finishSentence();
+      else if (item.key !== ' ') {
+        if (!active || active.roomId !== roomId) {
+          active = {roomId,origin:now,tokens:new Set()}; sentences.push(active);
+        }
+        token.sentence = active;
+        token.events = eventsFor(item.key,roomId,item.wordStart,now-active.origin);
+        active.tokens.add(token);
+      }
+      inserted.push(token);
+    }
+    roomTokens.set(roomId,[...old.slice(0,prefix),...inserted,...old.slice(oldEnd)]);
+  }
+  function snapshot() {
+    finishSentence();
+    return sentences.map(sentence => {
+      const events = [...sentence.tokens].flatMap(t => t.events).map(e => ({...e})).sort((a,b)=>a.time-b.time);
+      if (!events.length) return null;
+      const first = events[0].time;
+      events.forEach(e => {e.time -= first;});
+      return events;
+    }).filter(Boolean);
+  }
+  async function ensureLibraries() {
+    if (!libraryPromise) libraryPromise = (async () => {
+      await loadLibrary([
+        'https://cdnjs.cloudflare.com/ajax/libs/lamejs/1.2.1/lame.min.js',
+        'https://cdn.jsdelivr.net/npm/lamejs@1.2.1/lame.min.js'
+      ],()=>!!window.lamejs?.Mp3Encoder);
+      await loadLibrary([
+        'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js',
+        'https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js'
+      ],()=>typeof window.JSZip === 'function');
+    })().catch(error => {libraryPromise=null;throw error;});
+    await libraryPromise;
+  }
+  async function createMp3(data, report) {
+    const paths = [...new Set(data.flatMap(events=>events.map(e=>e.src)))];
+    const buffers = new Map();
+    let missing = 0;
+    for (let i=0;i<paths.length;i++) {
+      report(`사운드 준비 중… ${i+1}/${paths.length}`);
+      try {buffers.set(paths[i],await loadAudioBuffer(paths[i]));}
+      catch(error) {buffers.set(paths[i],null);missing++;console.warn('누락된 사운드는 무음 처리:',paths[i],error);}
+    }
+    let cursor=1;
+    const scheduled=[];
+    data.forEach((events,index)=>{
+      let duration=0;
+      for(const event of events) {
+        const buffer=buffers.get(event.src);
+        if(!buffer) {duration=Math.max(duration,event.time);continue;}
+        duration=Math.max(duration,event.time+buffer.duration/event.rate+(event.cutoff?0.15:0));
+        scheduled.push({...event,buffer,start:cursor+event.time});
+      }
+      cursor+=duration+(index<data.length-1?1:0);
+    });
+    if(cursor>600) throw new Error('사운드가 10분을 넘습니다. 기록 분량을 줄여주세요.');
+    const Context=window.OfflineAudioContext||window.webkitOfflineAudioContext;
+    if(!Context) throw new Error('이 브라우저는 오디오 내보내기를 지원하지 않습니다.');
+    const ctx=new Context(2,Math.max(1,Math.ceil(cursor*44100)),44100);
+    for(const event of scheduled) {
+      const source=ctx.createBufferSource(), gain=ctx.createGain();
+      source.buffer=event.buffer;source.playbackRate.value=event.rate;gain.gain.value=event.gain;
+      if(event.cutoff) {
+        const a=ctx.createBiquadFilter(),b=ctx.createBiquadFilter();
+        for(const filter of [a,b]) {filter.type='lowpass';filter.frequency.value=event.cutoff;filter.Q.value=0.707;}
+        source.connect(a);a.connect(b);b.connect(gain);
+      } else source.connect(gain);
+      gain.connect(ctx.destination);source.start(event.start);
+    }
+    report('사운드 합치는 중…');
+    const buffer=await ctx.startRendering();
+    const left=buffer.getChannelData(0),right=buffer.getChannelData(1);
+    let peak=0;
+    for(let i=0;i<left.length;i++) peak=Math.max(peak,Math.abs(left[i]),Math.abs(right[i]));
+    const scale=peak>0.98?0.98/peak:1;
+    const encoder=new window.lamejs.Mp3Encoder(2,44100,192),chunks=[],block=1152;
+    for(let offset=0;offset<left.length;offset+=block) {
+      const length=Math.min(block,left.length-offset),l=new Int16Array(length),r=new Int16Array(length);
+      for(let i=0;i<length;i++) {
+        const a=Math.max(-1,Math.min(1,left[offset+i]*scale)),b=Math.max(-1,Math.min(1,right[offset+i]*scale));
+        l[i]=Math.round(a*(a<0?32768:32767));r[i]=Math.round(b*(b<0?32768:32767));
+      }
+      const encoded=encoder.encodeBuffer(l,r);
+      if(encoded.length) chunks.push(new Uint8Array(encoded));
+      if(offset%(block*100)===0) {report(`MP3 변환 중… ${Math.floor(offset/left.length*100)}%`);await new Promise(resolve=>setTimeout(resolve,0));}
+    }
+    const last=encoder.flush();if(last.length) chunks.push(new Uint8Array(last));
+    return {blob:new Blob(chunks,{type:'audio/mpeg'}),missing};
+  }
+  async function saveZip(pdfBlob,data,email,report) {
+    await ensureLibraries();
+    const result=await createMp3(data,report);
+    const zip=new window.JSZip();
+    zip.file('기록.pdf',pdfBlob);
+    zip.file('사운드.mp3',result.blob);
+    report('ZIP 파일 생성 중…');
+    const blob=await zip.generateAsync({type:'blob',compression:'STORE'});
+    const safeEmail=email.replace(/[<>:"/\\|?*\u0000-\u001f]/g,char=>encodeURIComponent(char));
+    const link=document.createElement('a'),url=URL.createObjectURL(blob);
+    link.href=url;link.download=`${safeEmail}.zip`;
+    document.body.appendChild(link);link.click();link.remove();
+    setTimeout(()=>URL.revokeObjectURL(url),60000);
+    return result.missing;
+  }
+  function reset() {roomTokens.clear();sentences.length=0;active=null;}
+  return {capture,finishSentence,snapshot,saveZip,reset};
+})();
+
+    renderRoom("entrance");
+  </script>
+</body>
+</html>
