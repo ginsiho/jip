@@ -824,6 +824,29 @@
   aspect-ratio: 210 / 297;
 }
 
+
+    .nav-text { background: var(--button-color, #ff146a); color: #fff; }
+    .nav-text.position-top { top: 0; }
+    .nav-text.position-left { left: 0; }
+    .nav-text.position-right { right: 0; }
+    .nav-text.position-bottom { bottom: 0; }
+    .nav-text.position-top-right { top: 0; right: 0; }
+    .living-music-button {
+      position: absolute; top: 0; left: 0; display: grid; place-items: center;
+      width: 44px; height: 44px; margin: 0; padding: 6px; border: 0;
+      background: transparent; color: var(--button-color, #ff146a);
+      cursor: pointer; pointer-events: auto;
+    }
+    .living-music-button:focus-visible { outline: 1px dashed currentColor; outline-offset: 3px; }
+    .living-music-note {
+      display: block; width: 32px; height: 32px; pointer-events: none;
+      transform-origin: center; animation: living-note-spin 3s linear infinite;
+      animation-play-state: paused;
+    }
+    .living-music-button.is-playing .living-music-note { animation-play-state: running; }
+    @keyframes living-note-spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+    @media (prefers-reduced-motion: reduce) { .living-music-note { animation: none; } }
+
   </style>
   <script>
   (() => {
@@ -833,6 +856,11 @@
       "FontC",
       "FontD"
     ];
+
+    const buttonColors = ["#FF146A", "#E60023", "#E84A00", "#008A32", "#0074E8", "#3434FF", "#7928ED", "#C000D4"];
+    document.documentElement.style.setProperty(
+      "--button-color", buttonColors[Math.floor(Math.random() * buttonColors.length)]
+    );
 
     const selectedFont =
       fonts[Math.floor(Math.random() * fonts.length)];
@@ -1242,13 +1270,13 @@
       "ㅢ": ["ㅡ", "ㅣ"]
     };
 
+    const COMMON_IMAGE_SRC = "./images/common.png";
+    const COMMON_IMAGE_SCALE = 0.3;
+    const COMMON_IMAGE_JAMOS = new Set(["ㄲ", "ㅆ"]);
     const jamoImages = Object.fromEntries(
-      [...CHOSEONG, ...JUNGSEONG]
-        .filter(jamo => !COMPLEX_JAMO[jamo])
-        .map(jamo => [
-          jamo,
-          `./images/${jamo}.png`
-        ])
+      [...new Set([...CHOSEONG, ...JUNGSEONG])]
+        .filter(jamo => !COMPLEX_JAMO[jamo] && !COMMON_IMAGE_JAMOS.has(jamo))
+        .map(jamo => [jamo, `./images/${jamo}.png`])
     );
 
     const elasticJamos = new Set([
@@ -1276,9 +1304,9 @@
         ];
       }
 
-      return jamoImages[character] || COMPLEX_JAMO[character]
-        ? splitJamo(character)
-        : [];
+      if (COMPLEX_JAMO[character]) return splitJamo(character);
+      if (/^[\p{Script=Hangul}0-9\p{P}]$/u.test(character)) return [character];
+      return [];
     }
 
     function textToJamos(text) {
@@ -1325,6 +1353,106 @@
     );
 
     let currentRoom = "entrance";
+
+    const livingPlaylist = [
+      "./sounds/living/track_1.mp3",
+      "./sounds/living/track_2.mp3",
+      "./sounds/living/track_3.mp3"
+    ];
+    const livingMusic = new Audio();
+    livingMusic.preload = "metadata";
+    livingMusic.volume = 0.7;
+    livingMusic.loop = false;
+    let livingTrackIndex = 0;
+    let livingTrackLoaded = false;
+    let livingMusicPending = false;
+    let livingMusicRequest = 0;
+    function updateLivingMusicButton() {
+      const button = document.getElementById("livingMusicButton");
+      if (!button) return;
+      const playing = livingTrackLoaded && !livingMusic.paused && !livingMusic.ended;
+      button.classList.toggle("is-playing", playing);
+      button.setAttribute("aria-label", playing ? "음악 일시정지" : "음악 재생");
+      button.setAttribute("aria-pressed", String(playing));
+    }
+    function setLivingMusicTrack(index) {
+      livingTrackIndex = index;
+      livingMusic.src = livingPlaylist[index];
+      livingTrackLoaded = true;
+      livingMusic.load();
+    }
+    async function playLivingMusic() {
+      if (currentRoom !== "living") return;
+      const request = ++livingMusicRequest;
+      livingMusicPending = true;
+      try {
+        await livingMusic.play();
+        if (request !== livingMusicRequest) return;
+        livingMusicPending = false;
+        updateLivingMusicButton();
+      } catch (error) {
+        if (request !== livingMusicRequest) return;
+        livingMusicPending = false;
+        updateLivingMusicButton();
+        console.error("거실 음악 재생 실패:", error);
+        announcement.textContent = "음악을 재생하지 못했습니다. MP3 파일 경로를 확인해주세요.";
+      }
+    }
+    function toggleLivingMusic() {
+      if (currentRoom !== "living") return;
+      if (livingMusicPending || !livingMusic.paused) {
+        livingMusicRequest++;
+        livingMusicPending = false;
+        livingMusic.pause();
+        updateLivingMusicButton();
+        return;
+      }
+      if (!livingTrackLoaded) setLivingMusicTrack(livingTrackIndex);
+      playLivingMusic();
+    }
+    function stopLivingMusic() {
+      livingMusicRequest++;
+      livingMusicPending = false;
+      livingMusic.pause();
+      livingMusic.removeAttribute("src");
+      livingMusic.load();
+      livingTrackIndex = 0;
+      livingTrackLoaded = false;
+      updateLivingMusicButton();
+    }
+    livingMusic.addEventListener("ended", () => {
+      if (currentRoom !== "living" || livingTrackIndex + 1 >= livingPlaylist.length) {
+        stopLivingMusic();
+        return;
+      }
+      setLivingMusicTrack(livingTrackIndex + 1);
+      playLivingMusic();
+    });
+    livingMusic.addEventListener("playing", updateLivingMusicButton);
+    livingMusic.addEventListener("pause", updateLivingMusicButton);
+    livingMusic.addEventListener("error", updateLivingMusicButton);
+    function createLivingMusicButton() {
+      const button = document.createElement("button");
+      button.id = "livingMusicButton";
+      button.type = "button";
+      button.className = "living-music-button";
+      button.setAttribute("aria-label", "음악 재생");
+      button.setAttribute("aria-pressed", "false");
+      button.innerHTML = `<svg class="living-music-note" viewBox="0 0 32 32" fill="none"
+        xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
+        <path d="M12 23V8L26 5V20M12 12L26 9" stroke="currentColor" stroke-width="2"
+          stroke-linecap="round" stroke-linejoin="round"/>
+        <ellipse cx="8" cy="24" rx="5" ry="3.5" fill="currentColor"/>
+        <ellipse cx="22" cy="21" rx="5" ry="3.5" fill="currentColor"/></svg>`;
+      button.addEventListener("pointerdown", () => {
+        if (!rooms[currentRoom].typing) return;
+        imeInput.blur();
+        syncJamoImages();
+      });
+      button.addEventListener("click", toggleLivingMusic);
+      return button;
+    }
+
     let composing = false;
     let layoutFrame = null;
     let previewSnapshot = "";
@@ -1741,10 +1869,7 @@
 
 
     function filterHangul(text) {
-      return text.replace(
-        /[^\uAC00-\uD7A3\u3131-\u318E\u1100-\u11FF \n]/g,
-        ""
-      );
+      return text.replace(/[^\p{Script=Hangul}0-9\p{P} \n]/gu, "");
     }
 
     function sanitizeHangulInput() {
@@ -2048,30 +2173,49 @@
           if (roomId !== "mother") applyElasticAnimation(record);
         });
       }
+image.addEventListener("load", () => {
+  // 실제로 불러온 이미지가 공통 이미지인지 확인
+  const commonImageUrl = new URL(
+    COMMON_IMAGE_SRC,
+    document.baseURI
+  ).href;
 
-      image.addEventListener("load", () => {
-        record.naturalWidth = image.naturalWidth;
-        record.naturalHeight = image.naturalHeight;
-        record.imageLoaded = true;
-        record.imageSettled = true;
+  const isCommonImage =
+    (image.currentSrc || image.src) === commonImageUrl;
 
-        finishLoading();
-      }, { once: true });
+  // 공통 이미지에만 추가 축소 비율 적용
+  const imageScale = isCommonImage
+    ? COMMON_IMAGE_SCALE
+    : 1;
 
+  record.naturalWidth =
+    image.naturalWidth * imageScale;
+
+  record.naturalHeight =
+    image.naturalHeight * imageScale;
+
+  record.imageLoaded = true;
+  record.imageSettled = true;
+
+  finishLoading();
+}, { once: true });
+
+      let commonImageTried = !jamoImages[jamo] || jamoImages[jamo] === COMMON_IMAGE_SRC;
       image.addEventListener("error", () => {
+        if (!commonImageTried) {
+          commonImageTried = true;
+          image.src = COMMON_IMAGE_SRC;
+          return;
+        }
         const fallback = document.createElement("span");
-
         fallback.className = "fallback";
         fallback.textContent = jamo;
-
         image.replaceWith(fallback);
         record.visual = fallback;
         record.imageSettled = true;
-
         finishLoading();
-      }, { once: true });
-
-      image.src = jamoImages[jamo];
+      });
+      image.src = jamoImages[jamo] || COMMON_IMAGE_SRC;
 
       return record;
     }
@@ -3114,6 +3258,7 @@ mailDialog.close();
     }
 
     function renderRoom(roomId, moveFocus = false) {
+      if (roomId !== "living") stopLivingMusic();
       window.typingMp3?.finishSentence();
       const room = rooms[roomId];
       const state = roomStates[roomId];
@@ -3145,12 +3290,14 @@ mailDialog.close();
       }
 
       const buttons = links.map(createTextButton);
+      if (roomId === "living") buttons.push(createLivingMusicButton());
 
       if (roomId === "studio") {
         buttons.push(createPreviewButton());
       }
 
       navigation.replaceChildren(...buttons);
+      if (roomId === "living") updateLivingMusicButton();
 
       imageWorld.replaceChildren(
         ...state.tiles.map(record => record.element)
