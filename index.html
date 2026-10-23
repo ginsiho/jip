@@ -847,6 +847,15 @@
     @keyframes living-note-spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
     @media (prefers-reduced-motion: reduce) { .living-music-note { animation: none; } }
 
+
+    /* 공간별 배경 스트립: 타이핑 레이어와 독립 이동 */
+    .room-image { overflow: hidden; }
+    .room-background-panel {
+      position: absolute; left: 0; top: 0; width: 100%; height: 100%;
+      background-size: cover; background-position: center;
+      background-repeat: no-repeat; will-change: transform;
+    }
+
   </style>
   <script>
   (() => {
@@ -1109,7 +1118,7 @@
         backLabel: "현관문",
         links: [
           {
-            label: "주방",
+            label: "식탁",
             target: "kitchen",
             position: "left"
           },
@@ -1127,7 +1136,7 @@
       },
 
       kitchen: {
-        name: "주방",
+        name: "식탁",
         color: "#000000",
         rotation: 0,
         parent: "hall"
@@ -1161,7 +1170,7 @@
         backLabel: "계단",
         links: [
           {
-            label: "엄마 방",
+            label: "큰방",
             target: "mother",
             position: "left"
           },
@@ -1179,7 +1188,7 @@
       },
 
       mother: {
-        name: "엄마 방",
+        name: "큰방",
         color: "#000000",
         scale: 0.4,
         mode: "puzzle",
@@ -1470,6 +1479,270 @@
 
     const random = (min, max) =>
       Math.random() * (max - min) + min;
+
+
+    // 배경 파일 경로와 속도는 이 설정에서 변경하세요.
+    const ROOM_BACKGROUNDS = {
+  "entrance": {
+    "images": [
+      "./images/backgrounds/entrance/01.png",
+      "./images/backgrounds/entrance/02.png",
+      "./images/backgrounds/entrance/03.png",
+      "./images/backgrounds/entrance/04.png",
+      "./images/backgrounds/entrance/05.png",
+      "./images/backgrounds/entrance/06.png",
+      "./images/backgrounds/entrance/07.png",
+      "./images/backgrounds/entrance/08.png",
+      "./images/backgrounds/entrance/09.png",
+      "./images/backgrounds/entrance/10.png"
+    ],
+    "speedRatio": 0.45,
+    "followMs": 900
+  },
+  "hall": {
+    "images": [
+      "./images/backgrounds/hall/01.png",
+      "./images/backgrounds/hall/02.png",
+      "./images/backgrounds/hall/03.png",
+      "./images/backgrounds/hall/04.png",
+      "./images/backgrounds/hall/05.png",
+      "./images/backgrounds/hall/06.png",
+      "./images/backgrounds/hall/07.png",
+      "./images/backgrounds/hall/08.png",
+      "./images/backgrounds/hall/09.png",
+      "./images/backgrounds/hall/10.png",
+      "./images/backgrounds/hall/11.png",
+      "./images/backgrounds/hall/12.png",
+      "./images/backgrounds/hall/13.png"
+    ],
+    "speedRatio": 0.45,
+    "followMs": 900
+  },
+  "kitchen": {
+    "images": [
+      "./images/backgrounds/kitchen/01.png",
+      "./images/backgrounds/kitchen/02.png",
+      "./images/backgrounds/kitchen/03.png",
+      "./images/backgrounds/kitchen/04.png",
+      "./images/backgrounds/kitchen/05.png",
+      "./images/backgrounds/kitchen/06.png",
+      "./images/backgrounds/kitchen/07.png",
+      "./images/backgrounds/kitchen/08.png",
+      "./images/backgrounds/kitchen/09.png",
+      "./images/backgrounds/kitchen/10.png"
+    ],
+    "speedRatio": 0.45,
+    "followMs": 900
+  },
+  "living": {
+    "images": [
+      "./images/backgrounds/living/01.png",
+      "./images/backgrounds/living/02.png",
+      "./images/backgrounds/living/03.png",
+      "./images/backgrounds/living/04.png",
+      "./images/backgrounds/living/05.png",
+      "./images/backgrounds/living/06.png",
+      "./images/backgrounds/living/07.png",
+      "./images/backgrounds/living/08.png",
+      "./images/backgrounds/living/09.png",
+      "./images/backgrounds/living/10.png",
+      "./images/backgrounds/living/11.png",
+      "./images/backgrounds/living/12.png",
+      "./images/backgrounds/living/13.png",
+      "./images/backgrounds/living/14.png",
+      "./images/backgrounds/living/15.png",
+      "./images/backgrounds/living/16.png",
+      "./images/backgrounds/living/17.png",
+      "./images/backgrounds/living/18.png"
+    ],
+    "speedRatio": 0.45,
+    "followMs": 900
+  },
+  "storage": {
+    "images": [
+      "./images/backgrounds/storage/01.png",
+      "./images/backgrounds/storage/02.png"
+
+    ],
+    "speedRatio": 0.45,
+    "followMs": 900
+  },
+  "upstairs": {
+    "images": [
+      "./images/backgrounds/upstairs/01.png",
+      "./images/backgrounds/upstairs/02.png",
+      "./images/backgrounds/upstairs/03.png",
+      "./images/backgrounds/upstairs/04.png",
+      "./images/backgrounds/upstairs/05.png",
+      "./images/backgrounds/upstairs/06.png",
+      "./images/backgrounds/upstairs/07.png",
+      "./images/backgrounds/upstairs/08.png",
+      "./images/backgrounds/upstairs/09.png",
+      "./images/backgrounds/upstairs/10.png",
+      "./images/backgrounds/upstairs/11.png",
+      "./images/backgrounds/upstairs/12.png",
+      "./images/backgrounds/upstairs/13.png"
+    ],
+    "speedRatio": 0.45,
+    "followMs": 900
+  },
+  "mother": {
+    "images": [
+      "./images/backgrounds/mother/01.png",
+      "./images/backgrounds/mother/02.png",
+      "./images/backgrounds/mother/03.png",
+      "./images/backgrounds/mother/04.png",
+      "./images/backgrounds/mother/05.png",
+      "./images/backgrounds/mother/06.png",
+      "./images/backgrounds/mother/07.png",
+      "./images/backgrounds/mother/08.png",
+      "./images/backgrounds/mother/09.png"
+    ],
+    "speedRatio": 0.45,
+    "followMs": 900
+  },
+  "myroom": {
+    "images": [
+      "./images/backgrounds/myroom/01.png",
+      "./images/backgrounds/myroom/02.png",
+      "./images/backgrounds/myroom/03.png",
+      "./images/backgrounds/myroom/04.png",
+      "./images/backgrounds/myroom/05.png",
+      "./images/backgrounds/myroom/06.png",
+      "./images/backgrounds/myroom/07.png",
+      "./images/backgrounds/myroom/08.png"
+    ],
+    "speedRatio": 0.45,
+    "followMs": 900
+  },
+  "closet": {
+    "images": [
+      "./images/backgrounds/closet/01.png",
+      "./images/backgrounds/closet/02.png",
+      "./images/backgrounds/closet/03.png"
+    ],
+    "speedRatio": 0.45,
+    "followMs": 900
+  },
+  "studio": {
+    "images": [
+      "./images/backgrounds/studio/01.png",
+      "./images/backgrounds/studio/02.png",
+      "./images/backgrounds/studio/03.png",
+      "./images/backgrounds/studio/04.png",
+    ],
+    "speedRatio": 0.45,
+    "followMs": 900
+  }
+};
+    const FIXED_BACKGROUND_ROOMS = new Set([
+      "entrance", "storage", "closet", "myroom", "studio"
+    ]);
+    const backgroundStates = new Map();
+    let backgroundFrame = null;
+    let backgroundLastTime = 0;
+
+    function shuffleBackgrounds(list) {
+      const result = [...new Set(list.filter(Boolean))];
+      for (let i = result.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [result[i], result[j]] = [result[j], result[i]];
+      }
+      return result;
+    }
+
+    function backgroundAt(state, index) {
+      while (state.sequence.length <= index) {
+        const batch = shuffleBackgrounds(state.images);
+        if (!batch.length) return "";
+        const last = state.sequence[state.sequence.length - 1];
+        if (batch.length > 1 && batch[0] === last) {
+          [batch[0], batch[1]] = [batch[1], batch[0]];
+        }
+        state.sequence.push(...batch);
+      }
+      return state.sequence[index];
+    }
+
+    function beginRoomBackground(roomId) {
+      if (backgroundFrame !== null) cancelAnimationFrame(backgroundFrame);
+      backgroundFrame = null;
+      backgroundLastTime = 0;
+      const previous = backgroundStates.get(roomId);
+      const settings = ROOM_BACKGROUNDS[roomId] || {};
+      const images = settings.images?.length ? settings.images : [rooms[roomId].image].filter(Boolean);
+      let sequence = shuffleBackgrounds(images);
+      if (sequence.length > 1 && previous?.lastShown === sequence[0]) {
+        [sequence[0], sequence[1]] = [sequence[1], sequence[0]];
+      }
+      const state = {
+        images, sequence, panels: new Map(), position: 0, target: 0,
+        origin: null, lastShown: sequence[0] || "",
+        axis: rooms[roomId].mode === "tower" ? "y" : "x",
+        fixed: FIXED_BACKGROUND_ROOMS.has(roomId),
+        ratio: Math.max(0, settings.speedRatio ?? 0.45),
+        followMs: Math.max(0, settings.followMs ?? 900)
+      };
+      backgroundStates.set(roomId, state);
+      roomImage.style.backgroundImage = "none";
+      roomImage.replaceChildren();
+      paintRoomBackground(state);
+    }
+
+    function paintRoomBackground(state) {
+      const size = Math.max(1, state.axis === "x" ? scene.clientWidth : scene.clientHeight);
+      const position = state.fixed ? 0 : state.position;
+      const center = Math.max(0, Math.floor(position / size));
+      const needed = new Set();
+      for (let index = Math.max(0, center - 1); index <= center + 2; index++) {
+        if (state.fixed && index !== 0) continue;
+        const src = backgroundAt(state, index);
+        if (!src) continue;
+        needed.add(index);
+        let panel = state.panels.get(index);
+        if (!panel) {
+          panel = document.createElement("div");
+          panel.className = "room-background-panel";
+          panel.style.backgroundImage = `url(${JSON.stringify(src)})`;
+          state.panels.set(index, panel);
+          roomImage.appendChild(panel);
+        }
+        const offset = index * size - position;
+        panel.style.transform = state.axis === "x"
+          ? `translate3d(${offset}px,0,0)`
+          : `translate3d(0,${-offset}px,0)`;
+      }
+      for (const [index, panel] of state.panels) {
+        if (!needed.has(index)) { panel.remove(); state.panels.delete(index); }
+      }
+      state.lastShown = backgroundAt(state, center);
+    }
+
+    function updateRoomBackground(cameraX = 0, cameraY = 0) {
+      const state = backgroundStates.get(currentRoom);
+      if (!state) return;
+      const camera = state.axis === "x" ? cameraX : -cameraY;
+      // 재입장 때는 현재 타이핑 위치를 시작점으로 삼는다.
+      if (state.origin === null) state.origin = camera;
+      state.target = state.fixed ? 0 : Math.max(0, camera - state.origin) * state.ratio;
+      paintRoomBackground(state);
+      if (backgroundFrame !== null) return;
+      const roomId = currentRoom;
+      function tick(now) {
+        backgroundFrame = null;
+        if (currentRoom !== roomId) return;
+        const dt = backgroundLastTime ? Math.min(64, now - backgroundLastTime) : 16.67;
+        backgroundLastTime = now;
+        const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+        const alpha = reduced || state.followMs === 0 ? 1 : 1 - Math.exp(-dt / (state.followMs / 3));
+        state.position += (state.target - state.position) * alpha;
+        if (Math.abs(state.target - state.position) < 0.1) state.position = state.target;
+        paintRoomBackground(state);
+        if (state.position !== state.target) backgroundFrame = requestAnimationFrame(tick);
+        else backgroundLastTime = 0;
+      }
+      backgroundFrame = requestAnimationFrame(tick);
+    }
 
     function focusInput(moveCaret = false) {
       if (
@@ -2383,6 +2656,7 @@ image.addEventListener("load", () => {
         imageWorld.style.transition = "none";
       }
       imageWorld.style.transform = `translate(${-page * width}px, 0px)`;
+      updateRoomBackground(page * width, 0);
       state.motherCameraPage = page;
       state.motherViewportWidth = width;
       state.motherViewportHeight = height;
@@ -2509,6 +2783,8 @@ const originalHeight =
 
       imageWorld.style.transform =
         `translate(${-cameraX}px, ${-cameraY}px)`;
+
+      updateRoomBackground(cameraX, cameraY);
 
       scatterRecords.forEach(({ record, width, height }) => {
         if (!record.scatterPosition) {
@@ -3274,9 +3550,7 @@ mailDialog.close();
       scene.style.setProperty("--room-color", room.color);
       scene.setAttribute("aria-label", room.name);
 
-      roomImage.style.backgroundImage = room.image
-        ? `url("${room.image}")`
-        : "none";
+      beginRoomBackground(roomId);
 
       const links = [...room.links];
 
