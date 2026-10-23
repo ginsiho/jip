@@ -831,21 +831,76 @@
     .nav-text.position-right { right: 0; }
     .nav-text.position-bottom { bottom: 0; }
     .nav-text.position-top-right { top: 0; right: 0; }
-    .living-music-button {
-      position: absolute; top: 0; left: 0; display: grid; place-items: center;
-      width: 44px; height: 44px; margin: 0; padding: 6px; border: 0;
-      background: transparent; color: var(--button-color, #ff146a);
-      cursor: pointer; pointer-events: auto;
-    }
-    .living-music-button:focus-visible { outline: 1px dashed currentColor; outline-offset: 3px; }
-    .living-music-note {
-      display: block; width: 32px; height: 32px; pointer-events: none;
-      transform-origin: center; animation: living-note-spin 3s linear infinite;
-      animation-play-state: paused;
-    }
-    .living-music-button.is-playing .living-music-note { animation-play-state: running; }
-    @keyframes living-note-spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-    @media (prefers-reduced-motion: reduce) { .living-music-note { animation: none; } }
+    /* 거실 음악 버튼: 컬러 원 + 흰색 음표 */
+.living-music-button {
+  position: absolute;
+  top: 0;
+  left: 0;
+
+  display: grid;
+  place-items: center;
+
+  width: 44px;
+  height: 44px;
+
+  margin: 0;
+  padding: 0;
+
+  border: 0;
+  border-radius: 50%;
+
+  /* 텍스트 버튼과 동일한 배경색 */
+  background: var(--button-color, #ff146a);
+
+  /* SVG의 currentColor를 흰색으로 유지 */
+  color: #ffffff;
+
+  cursor: pointer;
+  pointer-events: auto;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* 키보드로 선택했을 때 표시 */
+.living-music-button:focus-visible {
+  outline: 1px dashed var(--button-color, #ff146a);
+  outline-offset: 3px;
+}
+
+/* 원 안의 흰색 음표 */
+.living-music-note {
+  display: block;
+
+  width: 28px;
+  height: 28px;
+
+  pointer-events: none;
+
+  transform-origin: center;
+  animation: living-note-spin 3s linear infinite;
+  animation-play-state: paused;
+}
+
+/* 음악 재생 중에만 음표 회전 */
+.living-music-button.is-playing .living-music-note {
+  animation-play-state: running;
+}
+
+@keyframes living-note-spin {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* 움직임 줄이기 설정 */
+@media (prefers-reduced-motion: reduce) {
+  .living-music-note {
+    animation: none;
+  }
+}
 
 
     /* 공간별 배경 스트립: 타이핑 레이어와 독립 이동 */
@@ -855,6 +910,31 @@
       background-size: cover; background-position: center;
       background-repeat: no-repeat; will-change: transform;
     }
+
+    /* 기록 버튼 위치: 화면 중앙 기준 이동 */
+/* 기록 버튼: 위치는 개별 조정, 크기는 일반 버튼과 동일 */
+#recordButton {
+  /* 지금 맞춰둔 좌표로 변경 */
+  --record-x: 250px;
+  --record-y: -80px;
+
+  /* 위치 */
+  left: calc(50% + var(--record-x));
+  top: calc(50% + var(--record-y));
+  right: auto;
+  bottom: auto;
+  transform: translate(-50%, -50%);
+
+  /* 다른 내비게이션 버튼과 동일한 크기 설정 */
+  font-size: clamp(16px, 2vw, 22px);
+  font-weight: 400;
+  line-height: 1;
+  padding: 4px;
+
+  /* 별도로 지정된 너비·높이가 있다면 해제 */
+  width: auto;
+  height: auto;
+}
 
   </style>
   <script>
@@ -1496,8 +1576,8 @@
       "./images/backgrounds/entrance/09.png",
       "./images/backgrounds/entrance/10.png"
     ],
-    "speedRatio": 0.45,
-    "followMs": 900
+    "speedRatio": 0.000005,
+    "followMs": 0.005
   },
   "hall": {
     "images": [
@@ -3523,16 +3603,17 @@ mailDialog.close();
     }
 
     function createPreviewButton() {
-      const button = document.createElement("button");
+  const button = document.createElement("button");
 
-      button.type = "button";
-      button.className = "nav-text position-center";
-      button.textContent = "기록";
+  button.id = "recordButton";
+  button.type = "button";
+  button.className = "nav-text position-center";
+  button.textContent = "기록";
 
-      button.addEventListener("click", openRecordPreview);
+  button.addEventListener("click", openRecordPreview);
 
-      return button;
-    }
+  return button;
+}
 
     function renderRoom(roomId, moveFocus = false) {
       if (roomId !== "living") stopLivingMusic();
