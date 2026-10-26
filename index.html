@@ -1,6 +1,10 @@
 
 
 
+
+
+
+
 <!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -218,7 +222,7 @@
       border-radius: 0;
       background: #ff146a;
       color: #ffffff;
-      font-size: clamp(16px, 2vw, 22px);
+      font-size: clamp(36px, 3vw, 46px);
       font-weight: 400;
       line-height: 1;
       white-space: nowrap;
@@ -560,15 +564,26 @@
       visibility: hidden;
     }
 
-    .storage-key-zone {
-      position: fixed;
-      left: clamp(12px, 8vw, 120px);
-      top: 50%;
-      transform: translateY(-50%);
-      width: 100px;
-      height: 100px;
-      z-index: 2;
-    }
+    /* 숨겨진 열쇠 영역 위치 */
+.storage-key-zone {
+  /* 이 두 값으로 위치 조절 */
+  --key-x: 85vw;
+  --key-y: 80vh;
+
+  position: fixed;
+
+  left: var(--key-x);
+  top: var(--key-y);
+  right: auto;
+  bottom: auto;
+
+  transform: translate(-50%, -50%);
+
+  width: 100px;
+  height: 100px;
+
+  z-index: 2;
+}
 
     .storage-key-zone[hidden] {
       display: none;
@@ -936,6 +951,269 @@
   height: auto;
 }
 
+/* 창고 → 거실: 왼쪽 아래 모서리 */
+.nav-text.position-bottom-left {
+  top: auto;
+  right: auto;
+  bottom: 0;
+  left: 0;
+
+  transform: none;
+}
+
+/* 기록 버튼: 사각형 배경 + 흰색 문서 아이콘 */
+#recordButton {
+  display: grid;
+  place-items: center;
+
+  /* 가로형 사각형 버튼 */
+  width: 44px;
+  height: 36px;
+  padding: 4px;
+
+  border: 0;
+  border-radius: 0;
+
+  background: var(--button-color, #ff146a);
+  color: #ffffff;
+}
+
+/* 문서 픽토그램 */
+#recordButton .record-icon {
+  display: block;
+
+  width: 26px;
+  height: 26px;
+
+  pointer-events: none;
+}
+
+/* 다운로드 / 휴지통 버튼: 흰색 정사각형 + 검은 테두리 */
+.paper-send-button,
+.paper-trash-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  width: var(--paper-action-size, 36px);
+  height: var(--paper-action-size, 36px);
+
+  box-sizing: border-box;
+  padding: 10px;
+
+  border: 1px solid #000;
+  border-radius: 0;
+
+  background: #fff;
+  color: #242321;
+
+  box-shadow: none;
+}
+
+/* 마우스를 올려도 흰색 배경과 검은 테두리 유지 */
+.paper-send-button:hover,
+.paper-trash-button:hover {
+  background: #fff;
+  border-color: #000;
+}
+
+/* 휴지통 버튼 하단을 A4 대지 하단과 정렬 */
+.preview-paper-group > .paper-trash-button {
+  bottom: 0;
+}
+
+/*
+  다운로드 버튼도 함께 아래로 이동.
+  기존 버튼 사이 간격 12px 유지.
+*/
+.preview-paper-group > .paper-send-area {
+  bottom: calc(var(--paper-action-size, 48px) + 20px);
+}
+
+
+    .record-score-overlay {
+      position: absolute;
+      left: 0; top: 0;
+      width: 100%; height: 100%;
+      display: block;
+      pointer-events: none;
+      user-select: none;
+      z-index: 2;
+      overflow: hidden;
+    }
+    .record-score-overlay > svg {
+      display: block;
+      width: 100%; height: 100%;
+    }
+
+    /* 창고 아카이브에만 적용되는 스타일 */
+    .scene.has-storage-archive > .room-image,
+    .scene.has-storage-archive > .image-viewport { display: none; }
+    .storage-photo-archive {
+      position: absolute; inset: 0; z-index: 2;
+      overflow: hidden; pointer-events: none;
+    }
+    .storage-photo-archive[hidden], .storage-photo-viewer[hidden] { display: none; }
+    .storage-photo-items { position: absolute; inset: 0; }
+    .storage-photo-thumb, .storage-photo-expanded {
+      display: block; position: absolute; margin: 0; padding: 0;
+      border: 0; border-radius: 0; background: transparent;
+      box-shadow: none; line-height: 0;
+      cursor: pointer; pointer-events: auto;
+      transform: none; transition: none; animation: none; filter: none;
+    }
+    .storage-photo-thumb img, .storage-photo-expanded img {
+      display: block; width: 100%; height: 100%; object-fit: contain;
+      max-width: none; max-height: none;
+      user-select: none; -webkit-user-drag: none; pointer-events: none;
+    }
+    .storage-photo-thumb:focus-visible, .storage-photo-expanded:focus-visible {
+      outline: 1px dashed #fff; outline-offset: 4px;
+    }
+    .storage-photo-viewer {
+      position: absolute; inset: 0; z-index: 100000;
+      display: grid; place-items: center; pointer-events: none;
+    }
+    .storage-photo-expanded { position: relative; }
+    .storage-photo-archive.is-photo-open .storage-photo-items { pointer-events: none; }
+    .storage-photo-archive.is-photo-open .storage-photo-thumb { pointer-events: none; }
+    .storage-photo-message {
+      position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%);
+      margin: 0; color: #fff; font-size: 14px; text-align: center;
+    }
+    .storage-photo-message:empty { display: none; }
+
+    /* =========================
+   공간 전환
+========================= */
+
+/* 이동 중 추가 클릭 방지 */
+body.is-room-sliding #scene {
+  pointer-events: none;
+}
+
+/* 이전 공간의 화면 복사본 */
+#scene > .room-slide-snapshot {
+  position: absolute !important;
+
+  inset: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+
+  margin: 0 !important;
+
+  z-index: 2 !important;
+
+  overflow: hidden !important;
+  pointer-events: none !important;
+
+  transform-origin: center;
+}
+
+/* 복사 화면의 내부 애니메이션은 정지 */
+.room-slide-snapshot,
+.room-slide-snapshot * {
+  animation: none !important;
+  transition: none !important;
+}
+
+/* 버튼은 화면 이동에 참여하지 않고 위에 고정 */
+#scene > .navigation {
+  z-index: 3;
+}
+
+/* 입구 버튼: 원래 비율 그대로 확대 */
+.nav-text.entrance-button {
+  --entrance-scale: 3;
+
+  transform:
+    translate(-50%, -50%)
+    scale(var(--entrance-scale));
+
+  transform-origin: center;
+}
+
+/* =========================
+   텍스트·아이콘 버튼 공통 크기 기준
+========================= */
+
+:root {
+  /* 공통 글자 크기: 이후에는 이 값으로 조절 */
+  --nav-button-font-size: clamp(36px, 3vw, 46px);
+
+  /* 텍스트 버튼의 위아래 여백 */
+  --nav-button-padding-y: 4px;
+
+  /* 글자 크기 × 줄높이 1 + 위아래 여백 */
+  --nav-button-height: calc(
+    var(--nav-button-font-size)
+    + var(--nav-button-padding-y)
+    + var(--nav-button-padding-y)
+  );
+
+  /* 안쪽 문서·음표 아이콘 크기 */
+  --nav-icon-size: calc(
+    var(--nav-button-font-size) * 0.78
+  );
+}
+
+/*
+  일반 공간 이동 버튼.
+  첫 화면의 중앙 입구 버튼과 기록 버튼은 제외해서
+  입구의 기존 폰트 크기·확대 비율을 유지.
+*/
+.nav-text:not(.position-center) {
+  font-size: var(--nav-button-font-size);
+  line-height: 1;
+
+  padding-top: var(--nav-button-padding-y);
+  padding-bottom: var(--nav-button-padding-y);
+}
+
+/* 기록 버튼: 텍스트 버튼과 높이를 맞춤 */
+#recordButton {
+  box-sizing: border-box;
+
+  height: var(--nav-button-height);
+
+  /* 기존 가로형 직사각형 비율 유지 */
+  width: calc(var(--nav-button-height) * 1.2222);
+
+  padding: 0;
+}
+
+#recordButton .record-icon {
+  width: var(--nav-icon-size);
+  height: var(--nav-icon-size);
+}
+
+/* 음악 버튼: 텍스트 버튼 높이와 같은 지름 */
+.living-music-button {
+  box-sizing: border-box;
+
+  width: var(--nav-button-height);
+  height: var(--nav-button-height);
+
+  padding: 0;
+}
+
+.living-music-note {
+  width: var(--nav-icon-size);
+  height: var(--nav-icon-size);
+}
+
+/* =========================
+   페이지 전체 정삼각형 커서
+========================= */
+
+html,
+html *,
+html *::before,
+html *::after,
+::backdrop {
+  cursor: var(--triangle-cursor, none) !important;
+}
+
   </style>
   <script>
   (() => {
@@ -959,6 +1237,112 @@
       `"${selectedFont}"`
     );
   })();
+</script>
+<script>
+(() => {
+  /* 커서 이미지 크기 */
+  const TRIANGLE_CURSOR_SIZE = 40;
+
+  function updateTriangleCursor() {
+    const root = document.documentElement;
+
+    const buttonColor = getComputedStyle(root)
+      .getPropertyValue("--button-color")
+      .trim();
+
+    /* 현재 사이트의 버튼 색상 형식: #RRGGBB */
+    if (!/^#[0-9a-f]{6}$/i.test(buttonColor)) {
+      return;
+    }
+
+    /* 버튼 색상의 RGB 반전색 */
+    const original = parseInt(
+      buttonColor.slice(1),
+      16
+    );
+
+    const inverse = (0xFFFFFF ^ original)
+      .toString(16)
+      .padStart(6, "0");
+
+    const color = `#${inverse}`;
+
+    const size = TRIANGLE_CURSOR_SIZE;
+    const canvas = document.createElement("canvas");
+
+    canvas.width = size;
+    canvas.height = size;
+
+    const context = canvas.getContext("2d");
+
+    if (!context) return;
+
+    /* 위를 향하는 정삼각형 */
+    const margin = 2;
+    const side = size - margin * 2;
+    const triangleHeight =
+      side * Math.sqrt(3) / 2;
+
+    const tipX = size / 2;
+    const tipY = margin;
+
+    context.clearRect(0, 0, size, size);
+
+    context.beginPath();
+
+    /* 위쪽 꼭짓점 */
+    context.moveTo(tipX, tipY);
+
+    /* 오른쪽 아래 꼭짓점 */
+    context.lineTo(
+      size - margin,
+      margin + triangleHeight
+    );
+
+    /* 왼쪽 아래 꼭짓점 */
+    context.lineTo(
+      margin,
+      margin + triangleHeight
+    );
+
+    context.closePath();
+
+    context.fillStyle = color;
+    context.fill();
+
+    const imageUrl = canvas.toDataURL("image/png");
+
+    /*
+      실제 클릭 지점은 위쪽 꼭짓점.
+      이미지가 적용되지 않으면 기본 커서 대신 숨김 처리.
+    */
+    const cursorValue =
+      `url("${imageUrl}") ${tipX} ${tipY}, none`;
+
+    /* 같은 값을 반복해서 설정하지 않음 */
+    if (
+      root.style.getPropertyValue("--triangle-cursor")
+      !== cursorValue
+    ) {
+      root.style.setProperty(
+        "--triangle-cursor",
+        cursorValue
+      );
+    }
+  }
+
+  updateTriangleCursor();
+
+  /* 버튼 색이 변경되면 반전색도 갱신 */
+  const observer = new MutationObserver(
+    updateTriangleCursor
+  );
+
+  observer.observe(document.documentElement, {
+    attributes: true,
+    attributeFilter: ["style"]
+  });
+})();
 </script>
 </head>
 
@@ -1077,10 +1461,10 @@
         aria-label="PDF와 MP3를 ZIP으로 저장"
         title="기록 저장"
       >
-        기록 저장
+        저장
       </button>
 
-      <p class="download-note">입력한 이메일 주소는 ZIP 파일명으로 사용됩니다. PDF와 사운드 MP3가 함께 저장되며, 이메일이 자동 발송되지는 않습니다.</p>
+      <p class="download-note">입력한 주소는 파일 이름이 됩니다. <br>이야기와 소리를 함께 저장해 두었다가 나중에 발송해 드릴게요.</p>
       <p
         class="download-status"
         id="mailStatus"
@@ -1239,7 +1623,8 @@
       storage: {
         name: "창고",
         color: "#000000",
-        mode: "tower",
+        mode: "none",
+        typing: false,
         parent: "living"
       },
 
@@ -1444,19 +1829,47 @@
 
     let currentRoom = "entrance";
 
-    const livingPlaylist = [
-      "./sounds/living/track_1.mp3",
-      "./sounds/living/track_2.mp3",
-      "./sounds/living/track_3.mp3"
+    let livingPlaylist = [
+      "./sounds/living/1_Macadam Crocodile_Hold on darling.flac",
+      "./sounds/living/2_Macadam Crocodile_Walk Faster.flac",
+      "./sounds/living/3_Macadam Crocodile_Dreaming of you.flac",
+      "./sounds/living/4_Macadam Crocodile_Ragysh.flac",
+      "./sounds/living/5_Macadam Crocodile_Dance knows no bounds.flac",
+      "./sounds/living/6_Macadam Crocodile_Tumult.flac"
     ];
+    /* 원본 목록을 복사해서 랜덤하게 섞기 */
+function shuffleLivingPlaylist(list) {
+  const shuffled = [...list];
+
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+
+    [shuffled[i], shuffled[j]] = [
+      shuffled[j],
+      shuffled[i]
+    ];
+  }
+
+  return shuffled;
+}
+
+    /* 거실과 창고에서 이어지는 음악 */
     const livingMusic = new Audio();
     livingMusic.preload = "metadata";
-    livingMusic.volume = 0.7;
+    livingMusic.volume = 1;
     livingMusic.loop = false;
     let livingTrackIndex = 0;
     let livingTrackLoaded = false;
     let livingMusicPending = false;
     let livingMusicRequest = 0;
+    let livingMusicGraph = null;
+    const LIVING_MUSIC_ROOM_SOUND = {
+      living: { cutoff: 20000, gain: 0.7 },
+      storage: { cutoff: 650, gain: 0.18 }
+    };
+    function isLivingMusicRoom(roomId) {
+      return roomId === "living" || roomId === "storage";
+    }
     function updateLivingMusicButton() {
       const button = document.getElementById("livingMusicButton");
       if (!button) return;
@@ -1465,17 +1878,65 @@
       button.setAttribute("aria-label", playing ? "음악 일시정지" : "음악 재생");
       button.setAttribute("aria-pressed", String(playing));
     }
+    /* 음악 요소는 한 번만 연결하고 곡 변경 시에도 같은 필터를 사용한다. */
+    function ensureLivingMusicGraph() {
+      if (livingMusicGraph) return livingMusicGraph;
+      const ctx = getAudioContext();
+      if (!ctx) return null;
+      const source = ctx.createMediaElementSource(livingMusic);
+      const lowpassA = ctx.createBiquadFilter();
+      const lowpassB = ctx.createBiquadFilter();
+      const gain = ctx.createGain();
+      lowpassA.type = lowpassB.type = "lowpass";
+      lowpassA.Q.value = lowpassB.Q.value = 0.707;
+      source.connect(lowpassA);
+      lowpassA.connect(lowpassB);
+      lowpassB.connect(gain);
+      gain.connect(ctx.destination);
+      livingMusicGraph = { ctx, source, lowpassA, lowpassB, gain };
+      livingMusic.volume = 1;
+      const settings = LIVING_MUSIC_ROOM_SOUND[currentRoom] || LIVING_MUSIC_ROOM_SOUND.living;
+      lowpassA.frequency.value = lowpassB.frequency.value = Math.min(settings.cutoff, ctx.sampleRate * 0.49);
+      gain.gain.value = settings.gain;
+      return livingMusicGraph;
+    }
+    /* 거실은 선명하게, 창고는 문 너머처럼 작고 먹먹하게 전환한다. */
+    function updateLivingMusicRoomSound(roomId) {
+      const settings = LIVING_MUSIC_ROOM_SOUND[roomId];
+      if (!settings) return;
+      if (!livingMusicGraph) {
+        livingMusic.volume = settings.gain;
+        return;
+      }
+      const { ctx, lowpassA, lowpassB, gain } = livingMusicGraph;
+      const now = ctx.currentTime;
+      for (const filter of [lowpassA, lowpassB]) {
+        const param = filter.frequency;
+        param.cancelScheduledValues(now);
+        param.setValueAtTime(param.value, now);
+        param.setTargetAtTime(Math.min(settings.cutoff, ctx.sampleRate * 0.49), now, 0.16);
+      }
+      gain.gain.cancelScheduledValues(now);
+      gain.gain.setValueAtTime(gain.gain.value, now);
+      gain.gain.setTargetAtTime(settings.gain, now, 0.16);
+    }
     function setLivingMusicTrack(index) {
+      if (!livingPlaylist[index]) return;
       livingTrackIndex = index;
       livingMusic.src = livingPlaylist[index];
       livingTrackLoaded = true;
       livingMusic.load();
     }
     async function playLivingMusic() {
-      if (currentRoom !== "living") return;
+      if (!isLivingMusicRoom(currentRoom)) return;
       const request = ++livingMusicRequest;
       livingMusicPending = true;
       try {
+        const graph = ensureLivingMusicGraph();
+        if (graph && graph.ctx.state === "suspended") await graph.ctx.resume();
+        /* 준비 중 다른 공간으로 나가거나 일시정지했다면 재생하지 않는다. */
+        if (request !== livingMusicRequest || !isLivingMusicRoom(currentRoom)) return;
+        updateLivingMusicRoomSound(currentRoom);
         await livingMusic.play();
         if (request !== livingMusicRequest) return;
         livingMusicPending = false;
@@ -1485,7 +1946,7 @@
         livingMusicPending = false;
         updateLivingMusicButton();
         console.error("거실 음악 재생 실패:", error);
-        announcement.textContent = "음악을 재생하지 못했습니다. MP3 파일 경로를 확인해주세요.";
+        announcement.textContent = "음악을 재생하지 못했습니다. 오디오 파일 경로와 재생 권한을 확인해주세요.";
       }
     }
     function toggleLivingMusic() {
@@ -1497,7 +1958,10 @@
         updateLivingMusicButton();
         return;
       }
-      if (!livingTrackLoaded) setLivingMusicTrack(livingTrackIndex);
+      if (!livingTrackLoaded) {
+        if (!livingPlaylist.length) return;
+        setLivingMusicTrack(livingTrackIndex);
+      }
       playLivingMusic();
     }
     function stopLivingMusic() {
@@ -1510,8 +1974,9 @@
       livingTrackLoaded = false;
       updateLivingMusicButton();
     }
+    /* 창고에서도 곡이 끝나면 현재 목록의 다음 곡으로 이어진다. */
     livingMusic.addEventListener("ended", () => {
-      if (currentRoom !== "living" || livingTrackIndex + 1 >= livingPlaylist.length) {
+      if (!isLivingMusicRoom(currentRoom) || livingTrackIndex + 1 >= livingPlaylist.length) {
         stopLivingMusic();
         return;
       }
@@ -1534,12 +1999,22 @@
           stroke-linecap="round" stroke-linejoin="round"/>
         <ellipse cx="8" cy="24" rx="5" ry="3.5" fill="currentColor"/>
         <ellipse cx="22" cy="21" rx="5" ry="3.5" fill="currentColor"/></svg>`;
-      button.addEventListener("pointerdown", () => {
-        if (!rooms[currentRoom].typing) return;
-        imeInput.blur();
-        syncJamoImages();
-      });
-      button.addEventListener("click", toggleLivingMusic);
+      /* 버튼을 누를 때 조합 중이던 입력 정리 */
+button.addEventListener("pointerdown", () => {
+  if (!rooms[currentRoom].typing) return;
+
+  imeInput.blur();
+  syncJamoImages();
+});
+
+/* 음악 재생·일시정지 후 바로 타이핑할 수 있도록 포커스 복원 */
+button.addEventListener("click", () => {
+  toggleLivingMusic();
+
+  if (currentRoom === "living") {
+    focusInput();
+  }
+});
       return button;
     }
 
@@ -1643,7 +2118,18 @@
   "storage": {
     "images": [
       "./images/backgrounds/storage/01.png",
-      "./images/backgrounds/storage/02.png"
+      "./images/backgrounds/storage/02.png",
+      "./images/backgrounds/storage/03.png",
+      "./images/backgrounds/storage/04.png",
+      "./images/backgrounds/storage/05.png",
+      "./images/backgrounds/storage/06.png",
+      "./images/backgrounds/storage/07.png",
+      "./images/backgrounds/storage/08.png",
+      "./images/backgrounds/storage/09.png",
+      "./images/backgrounds/storage/10.png",
+      "./images/backgrounds/storage/11.png",
+      "./images/backgrounds/storage/12.png",
+      "./images/backgrounds/storage/13.png"
 
     ],
     "speedRatio": 0.45,
@@ -3075,7 +3561,181 @@ const originalHeight =
       }
     }
 
-    function updateRecordPaperPages(pages) {
+
+    /* 記録: テキストとは独立した図形の改行・改ページ */
+    const RECORD_SCORE = {
+      color: "#242321", opacity: 0.65, strokeEm: 0.025,
+      cellEm: 0.92, gapEm: 0.3, squareEm: 0.5,
+      circleDiameterEm: 0.48, circleGapEm: 0.06,
+      overlapEm: 0.002, spaceEm: 0.55
+    };
+    let recordScorePages = [];
+
+    function paginateScoreLines(lines, geometry, maxPages = 200) {
+      const {left, right, top, bottom, fs, lineHeight} = geometry;
+      const cfg = RECORD_SCORE;
+      const cell = fs * cfg.cellEm;
+      const stroke = fs * cfg.strokeEm;
+      const square = fs * cfg.squareEm;
+      const diameter = fs * cfg.circleDiameterEm;
+      const circleGap = fs * cfg.circleGapEm;
+      const stack = diameter * 3 + circleGap * 2;
+      const symbolHeight = Math.max(square, stack);
+      const xStart = left + stroke / 2;
+      const xEnd = right - stroke / 2;
+      const firstBottom = top + symbolHeight + stroke / 2;
+      const lastBottom = bottom - stroke / 2;
+      if (xEnd - xStart < Math.max(cell, square, diameter) || firstBottom > lastBottom) {
+        throw new Error('도형이 기록 여백 안에 들어가지 않습니다. 도형 크기를 줄여주세요.');
+      }
+      const pages = [];
+      /* 첫 글줄의 도형은 상단 여백 보정 없이 글자 기준으로 배치 */
+let page = 0;
+let rowBottom = -Infinity;
+let x = xStart;
+
+      function ensurePage() {
+        if (page >= maxPages) throw new Error('도형 기록이 200페이지를 넘습니다.');
+        while (pages.length <= page) pages.push([]);
+      }
+      function checkBottom() {
+        if (rowBottom > lastBottom) {
+          page++;
+          rowBottom = firstBottom;
+          x = xStart;
+        }
+        ensurePage();
+      }
+      for (const line of lines) {
+        if (!line.tokens.some(token => token !== 'space')) continue;
+        if (page < line.page) {
+  page = line.page;
+
+  /* 새 텍스트 페이지의 첫 줄도 글자 기준으로 배치 */
+  rowBottom = -Infinity;
+}
+        if (page === line.page) rowBottom = Math.max(rowBottom, line.anchor);
+        x = xStart;
+        checkBottom();
+        for (const token of line.tokens) {
+          if (token === 'space') {
+            x = Math.min(xEnd, x + fs * cfg.spaceEm);
+            continue;
+          }
+          if (x + cell > xEnd) {
+            rowBottom += lineHeight;
+            x = xStart;
+            checkBottom();
+          }
+          const shapes = pages[page];
+          if (token === 'circles') {
+            for (let i = 0; i < 3; i++) shapes.push({
+              tag: 'circle', cx: x + cell / 2,
+              cy: rowBottom - stack + diameter / 2 + i * (diameter + circleGap),
+              r: diameter / 2
+            });
+          } else {
+            shapes.push({tag: 'rect', x: x + (cell - square) / 2,
+              y: rowBottom - square, width: square, height: square});
+          }
+          x += cell + fs * cfg.gapEm;
+        }
+        rowBottom += lineHeight;
+      }
+      return pages;
+    }
+
+    function buildRecordScorePages(textPages, layout) {
+      const render = createRenderStage(layout);
+      try {
+        const fullText = textPages.join('');
+        const newline = String.fromCharCode(10);
+        const carriage = String.fromCharCode(13);
+        const ignored = [];
+        let paragraphStart = 0;
+        for (const paragraph of fullText.split(newline)) {
+          const mark = paragraph.indexOf(' ··· ');
+          if (mark >= 0) ignored.push([paragraphStart + mark, paragraphStart + paragraph.length]);
+          paragraphStart += paragraph.length + 1;
+        }
+        const lines = [];
+        const range = document.createRange();
+        let globalStart = 0;
+        for (let page = 0; page < textPages.length; page++) {
+          render.text.textContent = textPages[page];
+          const node = render.text.firstChild;
+          if (!node) continue;
+          const pageBounds = render.page.getBoundingClientRect();
+          let offset = 0;
+          let line = null;
+          for (const char of node.data) {
+            const start = offset;
+            offset += char.length;
+            const absolute = globalStart + start;
+            if (char === newline || char === carriage || ignored.some(([a,b]) => absolute >= a && absolute < b)) continue;
+            range.setStart(node, start);
+            range.setEnd(node, offset);
+            const bounds = range.getBoundingClientRect();
+            if (!bounds.height) continue;
+            const y = bounds.top - pageBounds.top;
+            if (!line || Math.abs(line.y - y) > 1) {
+              line = {page, y, anchor: y + layout.fontSize * RECORD_SCORE.overlapEm, tokens: []};
+              lines.push(line);
+            }
+            if (char.trim() === '') line.tokens.push('space');
+            else {
+              for (const jamo of decomposeCharacter(char)) {
+                if (!CHOSEONG.includes(jamo) && !JUNGSEONG.includes(jamo)) continue;
+                line.tokens.push(elasticJamos.has(jamo) ? 'circles' : 'square');
+              }
+            }
+          }
+          globalStart += textPages[page].length;
+        }
+        range.detach();
+        return paginateScoreLines(lines, {
+          left: layout.left * PDF_WIDTH,
+          right: (1 - layout.right) * PDF_WIDTH,
+          top: layout.top * PDF_HEIGHT,
+          bottom: (1 - layout.bottom) * PDF_HEIGHT,
+          fs: layout.fontSize,
+          lineHeight: layout.fontSize * layout.lineHeight
+        }, MAX_PDF_PAGES);
+      } finally { render.stage.remove(); }
+    }
+
+    function recordScoreSvg(shapes, fs) {
+      const cfg = RECORD_SCORE;
+      const content = shapes.map(({tag, ...attrs}) =>
+        '<' + tag + ' ' + Object.entries(attrs).map(([k,v]) => k + '="' + v + '"').join(' ') + '/>'
+      ).join('');
+      return '<svg xmlns="http://www.w3.org/2000/svg" width="' + PDF_WIDTH + '" height="' + PDF_HEIGHT +
+        '" viewBox="0 0 ' + PDF_WIDTH + ' ' + PDF_HEIGHT + '">' +
+        '<g fill="none" stroke="' + cfg.color + '" stroke-width="' + (fs * cfg.strokeEm) +
+        '" opacity="' + cfg.opacity + '">' + content + '</g></svg>';
+    }
+
+    async function placeRecordScore(page, shapes, layout, pdf = false) {
+      page.querySelectorAll('.record-score-overlay').forEach(el => el.remove());
+      if (!shapes?.length) return;
+      const markup = recordScoreSvg(shapes, layout.fontSize);
+      if (pdf) {
+        const image = new Image();
+        image.className = 'record-score-overlay';
+        image.alt = '';
+        image.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(markup);
+        await image.decode();
+        page.appendChild(image);
+      } else {
+        const layer = document.createElement('div');
+        layer.className = 'record-score-overlay';
+        layer.setAttribute('aria-hidden', 'true');
+        layer.innerHTML = markup;
+        page.appendChild(layer);
+      }
+    }
+
+    async function updateRecordPaperPages(pages) {
       paperGroup.querySelectorAll('.record-extra-page').forEach(page => page.remove());
       previewContent.textContent = pages[0] || '';
       paperTextArea.scrollTop = 0;
@@ -3094,6 +3754,9 @@ const originalHeight =
         previousPaper.after(paper);
         previousPaper = paper;
       }
+      await Promise.all([...paperGroup.querySelectorAll('.preview-paper')].map((page, index) =>
+        placeRecordScore(page, recordScorePages[index], recordLayout)
+      ));
     }
 
     async function rebuildRecordPages() {
@@ -3107,9 +3770,12 @@ const originalHeight =
         if (!previewDialog.open || buildId !== recordBuildId) return;
         const layout = captureRecordLayout();
         const pages = splitRecordIntoPages(previewSnapshot, layout);
+        const scorePages = buildRecordScorePages(pages, layout);
+        while (pages.length < scorePages.length) pages.push('');
         recordLayout = layout;
         recordPages = pages;
-        updateRecordPaperPages(pages);
+        recordScorePages = scorePages;
+        await updateRecordPaperPages(pages);
       } finally {
         if (buildId === recordBuildId) {
           previewBuilding = false;
@@ -3253,6 +3919,7 @@ const originalHeight =
       if (!recordLayout || !recordPages.length) return;
       const soundSnapshot = window.typingMp3.snapshot();
       const pages = [...recordPages];
+      const scorePages = recordScorePages.map(shapes => [...shapes]);
       const layout = { ...recordLayout };
       const button = mailForm.querySelector('button[type="submit"]');
       let render = null;
@@ -3278,6 +3945,7 @@ const originalHeight =
           mailStatus.textContent = `PDF 생성 중… ${index + 1} / ${pages.length}페이지`;
           render.text.textContent = pages[index];
           await yieldToScreen();
+          await placeRecordScore(render.page, scorePages[index], layout, true);
           const canvas = await window.html2canvas(render.page, {
             scale: 2,
             backgroundColor: '#ffffff',
@@ -3330,17 +3998,41 @@ mailDialog.close();
     });
 
 
-    function tryEnterStorage() {
-      if (
-        !keypadDialog.open ||
-        !storageKeyUnlocked ||
-        !storagePasswordUnlocked
-      ) {
-        return;
-      }
+    /* 잠금 해제 완료 후 현재 클릭·드래그 이벤트가 끝나면 한 번만 입장 */
+    let storageEntering = false;
+    let storageEntryTimer = null;
+    const storageEntryStatus = { phase: "idle", error: "" };
 
-      closeStorageKeypad();
-      renderRoom("storage", true);
+    function tryEnterStorage() {
+      if (storageEntering || !keypadDialog.open || !storageKeyUnlocked || !storagePasswordUnlocked) return;
+      storageEntering = true;
+      storageEntryStatus.phase = "authorized";
+      storageEntryStatus.error = "";
+      keypadLocked = true;
+      if (keypadErrorTimer !== null) {
+        clearTimeout(keypadErrorTimer);
+        keypadErrorTimer = null;
+      }
+      /* 마지막 숫자 클릭 또는 열쇠 pointerup 처리가 끝난 뒤 이동한다. */
+      storageEntryTimer = setTimeout(() => {
+        storageEntryTimer = null;
+        try {
+          storageEntryStatus.phase = "entering";
+          if (keypadDialog.open) keypadDialog.close();
+          /* 창고는 슬라이드 전환 없이 기존 공간 변경 함수를 직접 사용한다. */
+          renderRoom("storage", true);
+          storageEntryStatus.phase = "entered";
+        } catch (error) {
+          storageEntryStatus.phase = "error";
+          storageEntryStatus.error = String(error?.stack || error);
+          console.error("창고 입장 처리 실패:", error);
+          announcement.textContent = "창고 입장 중 오류가 발생했습니다. 콘솔의 오류를 확인해주세요.";
+        } finally {
+          /* 입장이 끝난 후에만 다음 방문을 위한 잠금 상태를 초기화한다. */
+          resetStorageKeypad();
+          storageEntering = false;
+        }
+      }, 0);
     }
 
     function placeStorageKeyHome() {
@@ -3454,6 +4146,8 @@ mailDialog.close();
 
       if (!success) return;
 
+      event.preventDefault();
+      event.stopPropagation();
       setStorageKeyLock(true);
       tryEnterStorage();
 
@@ -3461,6 +4155,12 @@ mailDialog.close();
         keypadGrid.querySelector("button")
           .focus({ preventScroll: true });
       }
+    });
+
+    /* 드래그 종료 뒤 이어지는 클릭은 암호창 배경 닫기에 사용하지 않는다. */
+    storageKey.addEventListener("click", event => {
+      event.preventDefault();
+      event.stopPropagation();
     });
 
     storageKey.addEventListener(
@@ -3497,7 +4197,9 @@ mailDialog.close();
     }
 
     function openStorageKeypad() {
-      if (keypadDialog.open) return;
+      if (storageEntering || keypadDialog.open || currentRoom === "storage") return;
+      storageEntryStatus.phase = "waiting";
+      storageEntryStatus.error = "";
 
       resetStorageKeypad();
 
@@ -3509,11 +4211,11 @@ mailDialog.close();
     }
 
     function closeStorageKeypad() {
+      /* 입장이 확정된 직후 배경 클릭으로 잠금 상태를 초기화하지 않는다. */
+      if (storageEntering) return;
+      if (keypadDialog.open) keypadDialog.close();
       resetStorageKeypad();
-
-      if (keypadDialog.open) {
-        keypadDialog.close();
-      }
+      storageEntryStatus.phase = "cancelled";
     }
 
     function showKeypadError() {
@@ -3532,6 +4234,7 @@ mailDialog.close();
 
     function enterStorageDigit(digit) {
       if (
+        storageEntering ||
         !keypadDialog.open ||
         storagePasswordUnlocked ||
         keypadLocked
@@ -3590,6 +4293,12 @@ mailDialog.close();
       button.className = `nav-text position-${position}`;
       button.textContent = label;
 
+      /* 첫 화면의 입구 버튼만 구분 */
+if (currentRoom === "entrance" && target === "hall") {
+  button.classList.add("entrance-button");
+  button.setAttribute("aria-label", "입장");
+}
+
       button.addEventListener("pointerdown", () => {
         if (!rooms[currentRoom].typing) return;
 
@@ -3610,22 +4319,293 @@ mailDialog.close();
   button.id = "recordButton";
   button.type = "button";
   button.className = "nav-text position-center";
-  button.textContent = "기록";
+
+  button.setAttribute("aria-label", "기록 보기");
+  button.title = "기록 보기";
+
+  /* 흰색 문서 픽토그램 */
+  button.innerHTML = `
+    <svg
+      class="record-icon"
+      viewBox="0 0 24 24"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      aria-hidden="true"
+      focusable="false"
+    >
+      <!-- 접힌 모서리가 있는 문서 -->
+      <path
+        d="M6 3H14L19 8V21H6V3Z"
+        stroke="currentColor"
+        stroke-width="1.5"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      />
+
+      <!-- 문서의 접힌 모서리 -->
+      <path
+        d="M14 3V8H19"
+        stroke="currentColor"
+        stroke-width="1.5"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      />
+
+      <!-- 문서 안의 글줄 -->
+      <path
+        d="M9 12H16M9 15H16M9 18H13"
+        stroke="currentColor"
+        stroke-width="1.5"
+        stroke-linecap="round"
+      />
+    </svg>
+  `;
 
   button.addEventListener("click", openRecordPreview);
 
   return button;
 }
 
+    /* 공간별 돌아가기 버튼 위치 */
+const ROOM_BACK_POSITIONS = {
+  living: "left",         // 거실 → 현관
+  kitchen: "right",       // 식탁 → 현관
+  mother: "right",        // 큰방 → 복도
+  myroom: "left",         // 내 방 → 복도
+  storage: "bottom-left" // 창고 → 거실
+};
+
+
+    /* =========================
+       창고 이미지 아카이브
+       원본 비율 유지 / 부분 노출 검사 / 클릭 확대와 복원
+    ========================= */
+    const STORAGE_ARCHIVE_OPTIONS = {
+      minWidth: 160,
+      maxWidth: 240,
+      maxHeight: 180,
+      edge: 24,
+      visiblePatch: 28,
+      expandedWidth: 1100,
+      expandedRatio: 0.88,
+      layoutAttempts: 160
+    };
+    let storageArchiveRoot = null;
+    let storageArchiveItems = [];
+    let storageArchiveRequest = 0;
+    let storageArchiveSelected = null;
+    let storageArchiveResizeFrame = null;
+
+    function subtractArchiveRectangle(rect, cover) {
+      const l = Math.max(rect.x, cover.x), t = Math.max(rect.y, cover.y);
+      const r = Math.min(rect.x + rect.w, cover.x + cover.w);
+      const b = Math.min(rect.y + rect.h, cover.y + cover.h);
+      if (l >= r || t >= b) return [rect];
+      const pieces = [];
+      if (t > rect.y) pieces.push({x:rect.x, y:rect.y, w:rect.w, h:t-rect.y});
+      if (b < rect.y+rect.h) pieces.push({x:rect.x, y:b, w:rect.w, h:rect.y+rect.h-b});
+      if (l > rect.x) pieces.push({x:rect.x, y:t, w:l-rect.x, h:b-t});
+      if (r < rect.x+rect.w) pieces.push({x:r, y:t, w:rect.x+rect.w-r, h:b-t});
+      return pieces;
+    }
+
+    function archiveAllPhotosExposed(rects) {
+      return rects.every((rect, index) => {
+        let parts = [rect];
+        for (let above = index + 1; above < rects.length; above++) {
+          parts = parts.flatMap(part => subtractArchiveRectangle(part, rects[above]));
+          if (!parts.length) return false;
+        }
+        const patchW = Math.min(STORAGE_ARCHIVE_OPTIONS.visiblePatch, rect.w * 0.25);
+        const patchH = Math.min(STORAGE_ARCHIVE_OPTIONS.visiblePatch, rect.h * 0.25);
+        return parts.some(part => part.w >= patchW && part.h >= patchH);
+      });
+    }
+
+    function archiveRectanglesOverlap(rects) {
+      return rects.some((a,i) => rects.slice(i+1).some(b =>
+        a.x < b.x+b.w && a.x+a.w > b.x && a.y < b.y+b.h && a.y+a.h > b.y
+      ));
+    }
+
+    function computeStorageArchiveLayout(items, width, height) {
+      const cfg = STORAGE_ARCHIVE_OPTIONS;
+      const edge = Math.min(cfg.edge, width * 0.06, height * 0.06);
+      const areaW = Math.max(1, width-edge*2), areaH = Math.max(1, height-edge*2);
+      const sizes = items.map(item => {
+        const scale = Math.min(item.preferredWidth/item.nw, cfg.maxHeight/item.nh,
+          areaW/item.nw, areaH/item.nh);
+        return {w:item.nw*scale, h:item.nh*scale};
+      });
+      for (let attempt=0; attempt<cfg.layoutAttempts; attempt++) {
+        const rects = [];
+        sizes.forEach((size,index) => {
+          let x = edge + Math.random() * (areaW-size.w);
+          let y = edge + Math.random() * (areaH-size.h);
+          if (index > 0 && Math.random() < 0.8) {
+            const anchor = rects[Math.floor(Math.random()*rects.length)];
+            x = anchor.x + (Math.random()*1.2-0.35)*anchor.w;
+            y = anchor.y + (Math.random()*1.2-0.35)*anchor.h;
+          }
+          x = Math.max(edge,Math.min(width-edge-size.w,x));
+          y = Math.max(edge,Math.min(height-edge-size.h,y));
+          rects.push({x,y,...size});
+        });
+        if (archiveAllPhotosExposed(rects) && (rects.length<2 || archiveRectanglesOverlap(rects))) return rects;
+      }
+      /* 사진이 많아 랜덤 배치가 어려우면 모두 보이는 배치로 전환 */
+      const columns = Math.min(items.length,Math.max(1,Math.ceil(Math.sqrt(items.length*areaW/areaH))));
+      const rows = Math.ceil(items.length/columns);
+      const cellW=areaW/columns,cellH=areaH/rows;
+      const gap=Math.min(12,cellW*0.12,cellH*0.12);
+      return items.map((item,index)=>{
+        const scale=Math.min((cellW-gap)/item.nw,(cellH-gap)/item.nh,
+          sizes[index].w/item.nw);
+        const w=item.nw*scale,h=item.nh*scale;
+        return {x:edge+(index%columns)*cellW+(cellW-w)/2,
+          y:edge+Math.floor(index/columns)*cellH+(cellH-h)/2,w,h};
+      });
+    }
+
+    function ensureStorageArchive() {
+      if (storageArchiveRoot) return storageArchiveRoot;
+      const root = document.createElement('section');
+      root.className = 'storage-photo-archive';
+      root.setAttribute('aria-label','창고 사진 아카이브');
+      root.hidden = true;
+      root.innerHTML = '<div class="storage-photo-items"></div><div class="storage-photo-viewer" hidden><button type="button" class="storage-photo-expanded" aria-label="확대한 사진 닫고 아카이브로 돌아가기"><img alt="" draggable="false"></button></div><p class="storage-photo-message" role="status"></p>';
+      root.querySelector('.storage-photo-expanded').addEventListener('click',()=>closeStorageArchivePhoto());
+      scene.appendChild(root);
+      storageArchiveRoot = root;
+      return root;
+    }
+
+    function layoutStorageArchivePhotos() {
+      if (currentRoom !== 'storage' || !storageArchiveRoot || storageArchiveRoot.hidden) return;
+      if (!storageArchiveItems.length) return;
+      const rects = computeStorageArchiveLayout(storageArchiveItems,scene.clientWidth,scene.clientHeight);
+      storageArchiveItems.forEach((item,index)=>{
+        item.rect = rects[index];
+        const r = item.rect;
+        Object.assign(item.button.style,{left:r.x+'px',top:r.y+'px',width:r.w+'px',height:r.h+'px',zIndex:String(index+1)});
+      });
+      fitStorageArchiveExpandedPhoto();
+    }
+
+    function fitStorageArchiveExpandedPhoto() {
+      if (!storageArchiveSelected || !storageArchiveRoot) return;
+      const item = storageArchiveSelected;
+      const cfg = STORAGE_ARCHIVE_OPTIONS;
+      const scale = Math.min(scene.clientWidth*cfg.expandedRatio/item.nw,
+        scene.clientHeight*cfg.expandedRatio/item.nh,cfg.expandedWidth/item.nw);
+      Object.assign(storageArchiveRoot.querySelector('.storage-photo-expanded').style,
+        {width:item.nw*scale+'px',height:item.nh*scale+'px'});
+    }
+
+    function openStorageArchivePhoto(item) {
+      if (storageArchiveSelected === item) { closeStorageArchivePhoto(); return; }
+      storageArchiveSelected = item;
+      const viewer = storageArchiveRoot.querySelector('.storage-photo-viewer');
+      const image = viewer.querySelector('img');
+      image.src = item.src;
+      image.alt = item.alt;
+      storageArchiveRoot.classList.add('is-photo-open');
+      storageArchiveRoot.querySelector('.storage-photo-items').inert = true;
+      item.button.setAttribute('aria-expanded','true');
+      viewer.hidden = false;
+      fitStorageArchiveExpandedPhoto();
+      viewer.querySelector('button').focus({preventScroll:true});
+    }
+
+    function closeStorageArchivePhoto(restoreFocus=true) {
+      if (!storageArchiveRoot) return;
+      const previous = storageArchiveSelected;
+      storageArchiveSelected = null;
+      storageArchiveRoot.querySelector('.storage-photo-viewer').hidden = true;
+      storageArchiveRoot.classList.remove('is-photo-open');
+      storageArchiveRoot.querySelector('.storage-photo-items').inert = false;
+      previous?.button.setAttribute('aria-expanded','false');
+      if (restoreFocus && previous?.button.isConnected && currentRoom==='storage') previous.button.focus({preventScroll:true});
+    }
+
+    async function renderStoragePhotoArchive(roomId) {
+      const request = ++storageArchiveRequest;
+      scene.classList.toggle('has-storage-archive',roomId==='storage');
+      closeStorageArchivePhoto(false);
+      if (roomId !== 'storage') {
+        if (storageArchiveRoot) {
+          storageArchiveRoot.hidden = true;
+          storageArchiveRoot.querySelector('.storage-photo-items').replaceChildren();
+        }
+        storageArchiveItems = [];
+        return;
+      }
+      const root = ensureStorageArchive();
+      root.hidden = false;
+      root.querySelector('.storage-photo-items').replaceChildren();
+      const status = root.querySelector('.storage-photo-message');
+      status.textContent = '사진을 불러오고 있어요.';
+      const sources = [...new Set((ROOM_BACKGROUNDS.storage?.images || []).filter(Boolean))];
+      for(let i=sources.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[sources[i],sources[j]]=[sources[j],sources[i]];}
+      const loaded = await Promise.all(sources.map((src,index)=>new Promise(resolve=>{
+        const image=new Image();
+        image.onload=()=>resolve({src,nw:image.naturalWidth,nh:image.naturalHeight,alt:'창고 사진 '+(index+1)});
+        image.onerror=()=>{console.warn('창고 사진을 불러오지 못했습니다:',src);resolve(null);};
+        image.src=src;
+      })));
+      if(request!==storageArchiveRequest || currentRoom!=='storage') return;
+      storageArchiveItems=loaded.filter(Boolean).map(item=>{
+        const button=document.createElement('button');
+        button.type='button';button.className='storage-photo-thumb';
+        button.setAttribute('aria-label',item.alt+' 확대해서 보기');
+        button.setAttribute('aria-expanded','false');
+        const image=document.createElement('img');
+        image.src=item.src;image.alt=item.alt;image.draggable=false;
+        button.appendChild(image);
+        item.button=button;
+        item.preferredWidth=STORAGE_ARCHIVE_OPTIONS.minWidth+Math.random()*(STORAGE_ARCHIVE_OPTIONS.maxWidth-STORAGE_ARCHIVE_OPTIONS.minWidth);
+        button.addEventListener('click',()=>openStorageArchivePhoto(item));
+        root.querySelector('.storage-photo-items').appendChild(button);
+        return item;
+      });
+      status.textContent = storageArchiveItems.length ? '' : '표시할 사진이 없어요. 창고 이미지 경로를 확인해주세요.';
+      layoutStorageArchivePhotos();
+    }
+
+    document.addEventListener('keydown',event=>{
+      if(event.key==='Escape' && currentRoom==='storage' && storageArchiveSelected){
+        event.preventDefault();event.stopImmediatePropagation();closeStorageArchivePhoto();
+      }
+    },true);
+    window.addEventListener('resize',()=>{
+      if(currentRoom!=='storage') return;
+      if(storageArchiveResizeFrame!==null) cancelAnimationFrame(storageArchiveResizeFrame);
+      storageArchiveResizeFrame=requestAnimationFrame(()=>{
+        storageArchiveResizeFrame=null;
+        layoutStorageArchivePhotos();
+      });
+    });
+
     function renderRoom(roomId, moveFocus = false) {
-      if (roomId !== "living") stopLivingMusic();
-      window.typingMp3?.finishSentence();
-      const room = rooms[roomId];
-      const state = roomStates[roomId];
+  /* 거실·창고 밖에서 거실에 들어올 때만 목록을 새로 섞는다. */
+  if (roomId === "living" && !isLivingMusicRoom(currentRoom)) {
+    stopLivingMusic();
+    livingPlaylist = shuffleLivingPlaylist(livingPlaylist);
+  }
+  /* 창고와 거실 사이에서는 곡과 재생·일시정지 상태를 유지한다. */
+  if (!isLivingMusicRoom(roomId)) stopLivingMusic();
+
+  window.typingMp3?.finishSentence();
+
+  const room = rooms[roomId];
+  const state = roomStates[roomId];
+
+  // 아래부터 기존 코드 그대로 유지
 
       imageWorld.style.transition = "none";
       roomStates.mother.motherCameraPage = null;
       currentRoom = roomId;
+      updateLivingMusicRoomSound(roomId);
       composing = false;
 
       startRoomVisit(roomId);
@@ -3638,14 +4618,17 @@ mailDialog.close();
       const links = [...room.links];
 
       if (room.parent) {
-        links.push({
-          label:
-            room.backLabel ||
-            `${rooms[room.parent].name}`,
-          target: room.parent,
-          position: "bottom"
-        });
-      }
+  links.push({
+    label:
+      room.backLabel ||
+      `${rooms[room.parent].name}`,
+
+    target: room.parent,
+
+    /* 지정된 위치가 없으면 기존처럼 중앙 하단 */
+    position: ROOM_BACK_POSITIONS[roomId] ?? "bottom"
+  });
+}
 
       const buttons = links.map(createTextButton);
       if (roomId === "living") buttons.push(createLivingMusicButton());
@@ -3666,6 +4649,8 @@ mailDialog.close();
 
       layoutImages();
 
+      renderStoragePhotoArchive(roomId);
+
       document.title = `집`;
 
       announcement.textContent =
@@ -3684,26 +4669,370 @@ mailDialog.close();
       }
     }
 
-    function moveTo(roomId) {
-      if (
-        !rooms[roomId] ||
-        roomId === currentRoom
-      ) {
-        return;
-      }
+    /* =========================
+   공간 전환 설정
+========================= */
 
-      if (roomId === "storage") {
-        openStorageKeypad();
-        return;
-      }
+const ROOM_SLIDE = {
+  duration: 500,
+  easing: "cubic-bezier(0.22, 0.68, 0.22, 1)"
+};
 
-      if (rooms[currentRoom].typing) {
-        imeInput.blur();
-        syncJamoImages();
-      }
+const NO_SLIDE_ROOMS = new Set([
+  "storage",
+  "closet"
+]);
 
-      renderRoom(roomId, true);
+let roomSliding = false;
+
+/* 현재 공간의 버튼 위치에서 이동 방향 확인 */
+/* 현재 공간의 버튼 위치에서 이동 방향 확인 */
+function getRoomSlideDirection(fromId, toId) {
+  /*
+    첫 화면 → 현관
+    다음 화면이 위에서 들어오며,
+    두 화면 모두 아래쪽으로 이동.
+  */
+  if (fromId === "entrance" && toId === "hall") {
+    return "top";
+  }
+
+  /*
+    현관 → 첫 화면
+    다음 화면이 아래에서 들어오며,
+    두 화면 모두 위쪽으로 이동.
+  */
+  if (fromId === "hall" && toId === "entrance") {
+    return "bottom";
+  }
+
+  const room = rooms[fromId];
+
+  const link = room.links.find(
+    item => item.target === toId
+  );
+
+  if (link) {
+    return link.position;
+  }
+
+  /* 나머지 돌아가기 버튼은 기존 위치 사용 */
+  if (room.parent === toId) {
+    return ROOM_BACK_POSITIONS[fromId] ?? "bottom";
+  }
+
+  return "bottom";
+}
+
+/* 다음 공간이 들어올 시작 위치 */
+function getRoomSlideOffset(direction) {
+  const width = scene.clientWidth;
+  const height = scene.clientHeight;
+
+  switch (direction) {
+    case "entry-up":
+      return { x: 0, y: height };
+
+    case "right":
+      return { x: width, y: 0 };
+
+    case "left":
+      return { x: -width, y: 0 };
+
+    case "top":
+      return { x: 0, y: -height };
+
+    case "bottom":
+      return { x: 0, y: height };
+
+    case "top-right":
+      return { x: width, y: -height };
+
+    case "top-left":
+      return { x: -width, y: -height };
+
+    case "bottom-right":
+      return { x: width, y: height };
+
+    case "bottom-left":
+      return { x: -width, y: height };
+
+    default:
+      return { x: 0, y: height };
+  }
+}
+
+/* 이전 화면의 현재 모습을 복사 */
+function makeRoomSlideSnapshot() {
+  const snapshot = scene.cloneNode(true);
+
+  const originalElements = [
+    scene,
+    ...scene.querySelectorAll("*")
+  ];
+
+  const copiedElements = [
+    snapshot,
+    ...snapshot.querySelectorAll("*")
+  ];
+
+  originalElements.forEach((element, index) => {
+    const copy = copiedElements[index];
+    const style = getComputedStyle(element);
+
+    /*
+      자모·배경이 이동 중이었다면
+      현재 화면에 보이는 위치를 보존.
+    */
+    copy.style.transform = style.transform;
+
+    /*
+      중복 ID는 제거하되
+      ID로 지정된 위치·크기·색상은 보존.
+    */
+    if (element.id) {
+      const properties = [
+        "position",
+        "top",
+        "right",
+        "bottom",
+        "left",
+        "width",
+        "height",
+        "padding",
+        "display",
+        "align-items",
+        "justify-content",
+        "font-size",
+        "line-height",
+        "color",
+        "background-color",
+        "border",
+        "border-radius"
+      ];
+
+      properties.forEach(property => {
+        copy.style.setProperty(
+          property,
+          style.getPropertyValue(property)
+        );
+      });
     }
+
+    copy.removeAttribute("id");
+    copy.removeAttribute("autofocus");
+  });
+
+  /* 모자이크 등에 사용되는 캔버스 그림도 복사 */
+  const originals = scene.querySelectorAll("canvas");
+  const copies = snapshot.querySelectorAll("canvas");
+
+  originals.forEach((canvas, index) => {
+    const copy = copies[index];
+
+    copy.width = canvas.width;
+    copy.height = canvas.height;
+
+    if (canvas.width && canvas.height) {
+      copy.getContext("2d")?.drawImage(canvas, 0, 0);
+    }
+  });
+
+  /*
+    버튼은 이전 화면과 함께 움직이지 않으므로 제거.
+    실제 navigation은 원래 위치에서 유지.
+  */
+  snapshot.querySelector(".navigation")?.remove();
+  snapshot.querySelector(".ime-input")?.remove();
+  snapshot.querySelector(".sr-only")?.remove();
+
+  snapshot.classList.add("room-slide-snapshot");
+
+  snapshot.setAttribute("aria-hidden", "true");
+  snapshot.inert = true;
+
+  snapshot.style.transform = "none";
+
+  return snapshot;
+}
+
+/* 배경과 자모 화면만 슬라이드 */
+async function slideToRoom(roomId) {
+  if (roomSliding) return;
+
+  const direction = getRoomSlideDirection(
+    currentRoom,
+    roomId
+  );
+
+  const offset = getRoomSlideOffset(direction);
+
+  roomSliding = true;
+
+  let snapshot = null;
+  const animations = [];
+
+  try {
+    snapshot = makeRoomSlideSnapshot();
+
+    /*
+      scene 안에 넣어서 실제 내비게이션보다
+      아래쪽 레이어에서 움직이게 한다.
+    */
+    scene.appendChild(snapshot);
+
+    document.body.classList.add(
+      "is-room-sliding"
+    );
+
+    /*
+      기존 공간 변경 처리를 그대로 실행.
+      음악·기록·버튼 갱신도 기존 함수가 담당.
+    */
+    renderRoom(roomId, false);
+
+    /* 다음 공간의 배경색을 배경 레이어에도 적용 */
+    roomImage.style.backgroundColor =
+      rooms[roomId].color;
+
+    /* 전환 도중 입력과 버튼 연속 조작 방지 */
+    scene.inert = true;
+
+    const options = {
+      duration: ROOM_SLIDE.duration,
+      easing: ROOM_SLIDE.easing,
+      fill: "both"
+    };
+
+    /* 이전 공간은 반대 방향으로 빠져나간다 */
+    animations.push(
+      snapshot.animate(
+        [
+          {
+            transform: "translate3d(0, 0, 0)"
+          },
+          {
+            transform:
+              `translate3d(${-offset.x}px, ${-offset.y}px, 0)`
+          }
+        ],
+        options
+      )
+    );
+
+    /*
+      새 공간의 배경과 이미지 레이어만 움직인다.
+      navigation과 scene 자체는 움직이지 않는다.
+    */
+    const incomingLayers = [
+      roomImage,
+      scene.querySelector(".image-viewport")
+    ].filter(Boolean);
+
+    incomingLayers.forEach(layer => {
+      animations.push(
+        layer.animate(
+          [
+            {
+              transform:
+                `translate3d(${offset.x}px, ${offset.y}px, 0)`
+            },
+            {
+              transform: "translate3d(0, 0, 0)"
+            }
+          ],
+          options
+        )
+      );
+    });
+
+    await Promise.all(
+      animations.map(animation => animation.finished)
+    );
+  } finally {
+    animations.forEach(animation => {
+      animation.cancel();
+    });
+
+    snapshot?.remove();
+
+    scene.inert = false;
+
+    document.body.classList.remove(
+      "is-room-sliding"
+    );
+
+    roomSliding = false;
+
+    /* 이동 완료 후 입력 포커스 복원 */
+    if (rooms[currentRoom].typing) {
+      focusInput(true);
+    } else {
+      const selector =
+        currentRoom === "studio"
+          ? "#recordButton"
+          : "button";
+
+      navigation
+        .querySelector(selector)
+        ?.focus({ preventScroll: true });
+    }
+  }
+}
+
+/* 이동 중 키보드로 다른 공간을 다시 여는 것 방지 */
+document.addEventListener(
+  "keydown",
+  event => {
+    if (!roomSliding) return;
+
+    event.preventDefault();
+    event.stopImmediatePropagation();
+  },
+  true
+);
+
+    function moveTo(roomId) {
+  if (
+    roomSliding ||
+    !rooms[roomId] ||
+    roomId === currentRoom
+  ) {
+    return;
+  }
+
+  /* 창고 입장은 기존 암호·열쇠 과정 유지 */
+  if (roomId === "storage") {
+    openStorageKeypad();
+    return;
+  }
+
+  /* 이동 전에 입력 중인 한글과 기록 정리 */
+  if (rooms[currentRoom].typing) {
+    imeInput.blur();
+    syncJamoImages();
+  }
+
+  const reducedMotion = window.matchMedia(
+    "(prefers-reduced-motion: reduce)"
+  ).matches;
+
+  const skipSlide =
+    reducedMotion ||
+    NO_SLIDE_ROOMS.has(currentRoom) ||
+    NO_SLIDE_ROOMS.has(roomId);
+
+  /* 창고·옷장 출입은 효과 없이 바로 변경 */
+  if (skipSlide) {
+    renderRoom(roomId, true);
+    return;
+  }
+
+  /* 나머지 공간은 버튼 방향으로 이동 */
+  slideToRoom(roomId).catch(error => {
+    console.error("공간 전환 실패:", error);
+  });
+}
 
 
     imeInput.addEventListener("compositionstart", () => {
@@ -3874,6 +5203,8 @@ mailDialog.close();
       recordLayout = null;
       paperGroup.querySelectorAll(".record-extra-page").forEach(page => page.remove());
       previewContent.textContent = "";
+      recordScorePages = [];
+      firstPaper.querySelectorAll('.record-score-overlay').forEach(el => el.remove());
 
       mailStatus.textContent = "";
 
@@ -4052,5 +5383,6 @@ window.typingMp3 = (() => {
 
     renderRoom("entrance");
   </script>
+ 
 </body>
 </html>
