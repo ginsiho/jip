@@ -1305,7 +1305,170 @@ html *::after,
   background-color: rgba(255, 255, 255, 0.06);
 }
 
-  </style>
+  
+/* 전시용 새 관람 시작 버튼 */
+:root {
+  --restart-button-size: var(--nav-button-height, 48px);
+  --restart-corner-space: calc(var(--restart-button-size) + 16px);
+}
+.exhibition-restart {
+  position: fixed;
+  right: env(safe-area-inset-right, 0px);
+  bottom: env(safe-area-inset-bottom, 0px);
+  left: auto;
+  top: auto;
+  z-index: 2147483647;
+  display: grid;
+  place-items: center;
+  box-sizing: border-box;
+  width: var(--restart-button-size);
+  height: var(--restart-button-size);
+  margin: 0;
+  padding: 5px;
+  border: 0;
+  border-radius: 0;
+  background: var(--button-color, #ff146a);
+  color: #ffffff;
+  box-shadow: none;
+  pointer-events: auto;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+.exhibition-restart[hidden] { display: none !important; }
+.exhibition-restart svg {
+  display: block;
+  width: var(--nav-icon-size, 30px);
+  height: var(--nav-icon-size, 30px);
+  pointer-events: none;
+}
+.exhibition-restart:focus-visible {
+  outline: 1px dashed #ffffff;
+  outline-offset: -4px;
+}
+
+/* 평소에는 숨김. 마우스가 올라오는 영역은 유지 */
+.exhibition-restart {
+  opacity: 0;
+  transition: opacity 120ms ease;
+}
+
+/* 버튼 영역에 마우스를 올리면 표시 */
+.exhibition-restart:hover {
+  opacity: 1;
+}
+
+/* 키보드로 버튼에 접근했을 때도 표시 */
+.exhibition-restart:focus-visible {
+  opacity: 1;
+}
+
+/* 파일 생성 중에는 평소처럼 숨김 */
+.exhibition-restart:disabled {
+  opacity: 0;
+}
+
+/* 생성 중에 마우스를 올리면 비활성 상태로 표시 */
+.exhibition-restart:disabled:hover {
+  opacity: 0.45;
+}
+/* 아이콘 대신 텍스트를 표시하는 비상구 버튼 */
+.exhibition-restart {
+  width: auto;
+  min-width: var(--restart-button-size, 48px);
+  height: var(--restart-button-size, 48px);
+
+  padding: 4px 8px;
+
+  font-family: inherit;
+  font-size: var(--nav-button-font-size, 36px);
+  font-weight: 400;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+
+/* 이메일 창 왼쪽 위에 겹쳐 표시하는 저장 결과 알림 */
+.record-save-result {
+  position: fixed;
+  inset: auto;
+
+  width: max-content;
+  max-width: calc(100vw - 24px);
+  max-height: calc(100svh - 24px);
+
+  margin: 0;
+  padding: 12px 14px;
+
+  border: 1px solid #000000;
+  border-radius: 0;
+
+  background: #ffffff;
+  color: #242321;
+  box-shadow: none;
+
+  text-align: left;
+  overflow: auto;
+}
+
+/* 닫혀 있을 때는 dialog 기본 숨김 상태 유지 */
+.record-save-result[open] {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+/* 뒤쪽 이메일 창을 어둡게 하지 않음 */
+.record-save-result::backdrop {
+  background: transparent;
+}
+
+.record-save-result-message {
+  flex: 1;
+  min-width: 0;
+
+  margin: 0;
+  padding: 0;
+
+  font: inherit;
+  letter-spacing: inherit;
+
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.record-save-result-confirm {
+  flex: 0 0 auto;
+
+  display: grid;
+  place-items: center;
+
+  margin: 0;
+  padding: 2px 4px;
+
+  border: 0;
+  border-radius: 0;
+
+  background: transparent;
+  color: inherit;
+  box-shadow: none;
+
+  font: inherit;
+  line-height: 1;
+}
+
+.record-save-result-confirm:hover,
+.record-save-result-confirm:active {
+  background: transparent;
+  color: inherit;
+  box-shadow: none;
+}
+
+.record-save-result-confirm:focus-visible {
+  outline: 1px dashed currentColor;
+  outline-offset: 2px;
+}
+
+</style>
   <script>
   (() => {
     const fonts = [
@@ -1550,7 +1713,7 @@ html *::after,
         class="mail-submit"
         type="submit"
         aria-label="PDF와 MP3를 ZIP으로 저장"
-        title="기록 저장"
+        title="저장"
       >
         저장
       </button>
@@ -2252,7 +2415,8 @@ button.addEventListener("click", () => {
       "./images/backgrounds/storage/48.png",
       "./images/backgrounds/storage/49.png",
       "./images/backgrounds/storage/50.png",
-      "./images/backgrounds/storage/51.png"
+      "./images/backgrounds/storage/51.png",
+      "./images/backgrounds/storage/52.png"
 
     ],
     "speedRatio": 0.45,
@@ -3790,6 +3954,7 @@ const originalHeight =
       for (let page = 0; page < maxPages && tokenIndex < tokens.length; page++) {
         if (!pages[page]) pages[page] = [];
         const info = pageObstacles[page] || {boxes: [], firstCenter: null};
+        if (info.skipPage) continue;
         const rowOrigin = Math.max(top + stroke / 2,
           info.firstCenter === null ? top + (lineHeight - symbolHeight) / 2 :
           info.firstCenter - symbolHeight / 2);
@@ -3851,8 +4016,14 @@ const originalHeight =
       try {
         const left = layout.left * PDF_WIDTH;
         const right = (1 - layout.right) * PDF_WIDTH;
+        const fullText = textPages.join('');
+        // 맨 앞의 방문객 번호와 구분선은 도형 생성에서 제외합니다.
+        const visitorHeader = fullText.match(
+          /^방문객[ \t]+\d+[ \t]*(?:\r?\n|$)(?:-{3,}[ \t]*(?:\r?\n|$))?/
+        );
+        const bodyStart = visitorHeader ? visitorHeader[0].length : 0;
         const tokens = [];
-        for (const paragraph of textPages.join('').split('\n')) {
+        for (const paragraph of fullText.slice(bodyStart).split('\n')) {
           const mark = paragraph.indexOf(' ··· ');
           const content = mark >= 0 ? paragraph.slice(0, mark) : paragraph;
           for (const char of content) {
@@ -3885,7 +4056,10 @@ const originalHeight =
         layout.separatorInkOffset = separatorInkOffset;
         layout.scoreStrokeEm = getRecordStrokeEm(layout.fontFamily);
         const pageObstacles = [];
+        let globalOffset = 0;
         for (const text of textPages) {
+          const pageStart = globalOffset;
+          globalOffset += text.length;
           render.text.textContent = text;
           const node = render.text.firstChild;
           const info = {boxes: [], firstCenter: null};
@@ -3906,20 +4080,27 @@ const originalHeight =
             let line = measuredLines[measuredLines.length - 1];
             if (!line || Math.abs(line.top - y) > 1) {
               line = {id: measuredLines.length, left, right: left, top: y,
-                bottom: bounds.bottom - pageBounds.top, content: ''};
+                bottom: bounds.bottom - pageBounds.top, content: '',
+                header: false, body: false};
               measuredLines.push(line);
             }
             line.content += char;
+            if (pageStart + start < bodyStart) line.header = true;
+            else if (char.trim()) line.body = true;
             line.right = Math.max(line.right, bounds.right - pageBounds.left);
             line.bottom = Math.max(line.bottom, bounds.bottom - pageBounds.top);
           }
           for (const line of measuredLines) {
             if (!line.content.trim()) continue;
-            if (info.firstCenter === null) info.firstCenter = (line.top + line.bottom) / 2;
-            line.divider = /^-{3,}$/.test(line.content.trim());
+            line.divider = line.header || /^-{3,}$/.test(line.content.trim());
+            if (info.firstCenter === null && line.body && !line.divider) {
+              info.firstCenter = (line.top + line.bottom) / 2;
+            }
             if (line.divider) line.right = right;
             info.boxes.push(line);
           }
+          // 본문이 시작되기 전의 머리말 전용 페이지는 비워 둡니다.
+          info.skipPage = pageStart < bodyStart && info.firstCenter === null;
         }
         return paginateScoreLines(tokens, {
           left, right, top: layout.top * PDF_HEIGHT,
@@ -4190,7 +4371,286 @@ const originalHeight =
       return new Promise(resolve => requestAnimationFrame(() => setTimeout(resolve, 0)));
     }
 
-    mailForm.addEventListener('submit', async event => {
+    
+    function exhibitionBridgeRequest(type, details = {}, timeout = 3000) {
+      const id = crypto.randomUUID();
+      return new Promise((resolve, reject) => {
+        const timer = setTimeout(() => finish(new Error('확장 프로그램 연결을 확인해주세요.')), timeout);
+        const listener = event => {
+          const data = event.data;
+          if (event.source !== window || event.origin !== location.origin ||
+              data?.channel !== 'exhibition-save-v2' || data.source !== 'extension' || data.id !== id) return;
+          if (data.type === 'FAILED') finish(new Error(data.error));
+          else if (data.type === 'PONG') finish(null);
+        };
+        function finish(error) {
+          clearTimeout(timer);
+          window.removeEventListener('message', listener);
+          error ? reject(error) : resolve();
+        }
+        window.addEventListener('message', listener);
+        window.postMessage({channel: 'exhibition-save-v2', source: 'page', type, id, ...details}, location.origin);
+      });
+    }
+
+    async function saveExhibitionBlob(blob, filename) {
+      await exhibitionBridgeRequest('PING');
+      const id = crypto.randomUUID();
+      const url = URL.createObjectURL(blob);
+      return new Promise((resolve, reject) => {
+        let clicked = false;
+        let timer = setTimeout(() => finish(new Error('다운로드 감시 연결에 실패했습니다.')), 5000);
+        function finish(error) {
+          clearTimeout(timer);
+          window.removeEventListener('message', listener);
+          // 오류 시에도 진행 중인 다운로드가 갑자기 끊기지 않도록 지연 해제합니다.
+          setTimeout(() => URL.revokeObjectURL(url), error ? 600000 : 1000);
+          error ? reject(error) : resolve();
+        }
+        function listener(event) {
+          const data = event.data;
+          if (event.source !== window || event.origin !== location.origin ||
+              data?.channel !== 'exhibition-save-v2' || data.source !== 'extension' || data.id !== id) return;
+          if (data.type === 'ARMED' && !clicked) {
+            clicked = true;
+            clearTimeout(timer);
+            timer = setTimeout(() => finish(new Error('저장 완료 확인 시간이 초과되었습니다. 다운로드 폴더를 확인해주세요.')), 600000);
+            try {
+              const link = document.createElement('a');
+              link.href = url;
+              link.download = filename;
+              document.body.appendChild(link);
+              link.click();
+              link.remove();
+            } catch (error) { finish(error); }
+          } else if (data.type === 'COMPLETE') finish(null);
+          else if (data.type === 'FAILED') finish(new Error(data.error || '다운로드가 중단되었습니다.'));
+        }
+        window.addEventListener('message', listener);
+        window.postMessage({channel: 'exhibition-save-v2', source: 'page', type: 'ARM', id, url}, location.origin);
+      });
+    }
+
+    let recordSaveResultDialog = null;
+    let recordSaveResultSuccess = false;
+    function ensureRecordSaveResultDialog() {
+  if (recordSaveResultDialog) {
+    return recordSaveResultDialog;
+  }
+
+  const dialog = document.createElement("dialog");
+
+  dialog.className = "record-save-result";
+
+  dialog.setAttribute(
+    "aria-labelledby",
+    "recordSaveResultMessage"
+  );
+
+  const message = document.createElement("p");
+
+  message.id = "recordSaveResultMessage";
+  message.className = "record-save-result-message";
+  message.setAttribute("role", "status");
+
+  const button = document.createElement("button");
+
+  button.type = "button";
+  button.className = "record-save-result-confirm";
+  button.textContent = "X";
+  button.setAttribute("aria-label", "저장 결과 알림 닫기");
+
+  button.addEventListener(
+    "click",
+    closeRecordSaveResult
+  );
+
+  dialog.addEventListener("cancel", event => {
+    event.preventDefault();
+    closeRecordSaveResult();
+  });
+
+  dialog.append(message, button);
+  document.body.appendChild(dialog);
+
+  recordSaveResultDialog = dialog;
+
+  return dialog;
+}
+
+/* 이메일 창 왼쪽 위를 기준으로 알림 위치 계산 */
+function positionRecordSaveResult() {
+  const dialog = recordSaveResultDialog;
+
+  if (!dialog?.open || !mailDialog.open) {
+    return;
+  }
+
+  const emailRect = mailDialog.getBoundingClientRect();
+  const resultRect = dialog.getBoundingClientRect();
+
+  const viewport = window.visualViewport;
+
+  const viewportLeft = viewport?.offsetLeft ?? 0;
+  const viewportTop = viewport?.offsetTop ?? 0;
+
+  const viewportWidth =
+    viewport?.width ??
+    document.documentElement.clientWidth;
+
+  const viewportHeight =
+    viewport?.height ??
+    window.innerHeight;
+
+  const edge = 12;
+
+  /* 이메일 창보다 왼쪽·위쪽으로 조금 이동 */
+  const overlapX = 36;
+  const overlapY = 12;
+
+  let left = emailRect.left - overlapX;
+  let top = emailRect.top - resultRect.height + overlapY;
+
+  const minLeft = viewportLeft + edge;
+  const minTop = viewportTop + edge;
+
+  const maxLeft = Math.max(
+    minLeft,
+    viewportLeft + viewportWidth - resultRect.width - edge
+  );
+
+  const maxTop = Math.max(
+    minTop,
+    viewportTop + viewportHeight - resultRect.height - edge
+  );
+
+  left = Math.max(minLeft, Math.min(left, maxLeft));
+  top = Math.max(minTop, Math.min(top, maxTop));
+
+  dialog.style.left = `${left}px`;
+  dialog.style.top = `${top}px`;
+}
+
+function showRecordSaveResult(success) {
+  const dialog = ensureRecordSaveResultDialog();
+
+  recordSaveResultSuccess = success;
+
+  const message = dialog.querySelector(
+    ".record-save-result-message"
+  );
+
+  message.textContent = success
+    ? "저장이 완료되었어요."
+    : "저장을 실패하였어요. 다시 시도해 주세요.";
+
+  /*
+    실제 이메일 입력란에서 서체와 크기를 복사.
+    랜덤으로 선택된 폰트도 그대로 따라감.
+  */
+  const inputStyle = getComputedStyle(mailRecipient);
+
+  Object.assign(dialog.style, {
+    fontFamily: inputStyle.fontFamily,
+    fontSize: inputStyle.fontSize,
+    fontWeight: inputStyle.fontWeight,
+    fontStyle: inputStyle.fontStyle,
+    lineHeight: inputStyle.lineHeight,
+    letterSpacing: inputStyle.letterSpacing
+  });
+
+  /*
+    기존 코드와 달리 이메일 창을 닫지 않음.
+    그 위에 결과 알림을 겹쳐 표시.
+  */
+  if (!mailDialog.open) {
+    mailDialog.showModal();
+  }
+
+  positionMailDialog();
+
+  /* 중앙에서 잠깐 보이는 현상을 피함 */
+  dialog.style.visibility = "hidden";
+
+  if (!dialog.open) {
+    dialog.showModal();
+  }
+
+  positionRecordSaveResult();
+
+  dialog.style.visibility = "visible";
+
+  dialog
+    .querySelector(".record-save-result-confirm")
+    .focus({ preventScroll: true });
+}
+
+function closeRecordSaveResult() {
+  if (!recordSaveResultDialog?.open) {
+    return;
+  }
+
+  recordSaveResultDialog.close();
+
+  if (recordSaveResultSuccess) {
+    /* 성공: 알림을 닫은 뒤 기존 기록 초기화 */
+    mailRecipient.value = "";
+    mailStatus.textContent = "";
+
+    discardAllRecords();
+
+    announcement.textContent =
+      "저장이 완료되어 기록을 초기화했습니다.";
+  } else {
+    /* 실패: 이메일과 기록을 유지하고 재시도 */
+    if (!mailDialog.open) {
+      mailDialog.showModal();
+    }
+
+    positionMailDialog();
+
+    mailForm
+      .querySelector('button[type="submit"]')
+      .focus({ preventScroll: true });
+  }
+}
+
+function scheduleRecordSaveResultPosition() {
+  requestAnimationFrame(() => {
+    positionRecordSaveResult();
+  });
+}
+
+window.addEventListener(
+  "resize",
+  scheduleRecordSaveResultPosition
+);
+
+window.addEventListener(
+  "scroll",
+  scheduleRecordSaveResultPosition,
+  true
+);
+
+if (window.visualViewport) {
+  window.visualViewport.addEventListener(
+    "resize",
+    scheduleRecordSaveResultPosition
+  );
+
+  window.visualViewport.addEventListener(
+    "scroll",
+    scheduleRecordSaveResultPosition
+  );
+}
+    document.addEventListener('keydown', event => {
+      if (!recordSaveResultDialog?.open || event.key !== 'Escape') return;
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      closeRecordSaveResult();
+    }, true);
+
+mailForm.addEventListener('submit', async event => {
       event.preventDefault();
       if (pdfDownloading || !mailForm.reportValidity()) return;
       const email = mailRecipient.value.trim();
@@ -4201,7 +4661,7 @@ const originalHeight =
       const layout = { ...recordLayout };
       const button = mailForm.querySelector('button[type="submit"]');
       let render = null;
-      let downloadRequested = false;
+      let saveSucceeded = false;
       pdfDownloading = true;
       button.disabled = true;
       mailRecipient.disabled = true;
@@ -4210,6 +4670,7 @@ const originalHeight =
       button.textContent = '생성 중…';
       mailStatus.textContent = 'PDF 도구를 준비하고 있습니다…';
       try {
+        await exhibitionBridgeRequest('PING');
         await ensurePdfLibraries();
         await document.fonts.ready;
         const pdf = new window.jspdf.jsPDF({
@@ -4248,15 +4709,9 @@ const originalHeight =
           message => { mailStatus.textContent = message; }
         );
 
-downloadRequested = true;
-
-// 이메일과 상태 문구 비우기
-mailRecipient.value = "";
-mailStatus.textContent = "";
-
-// 다운로드 요청 후 입력창 닫기
-mailDialog.close();
+        saveSucceeded = true;
       } catch (error) {
+        console.error('저장 실패:', error);
         mailStatus.textContent = `기록 ZIP 생성 실패: ${error.message}\n기록은 지워지지 않았습니다. 확인 후 다시 시도해주세요.`;
       } finally {
         if (render) render.stage.remove();
@@ -4265,11 +4720,8 @@ mailDialog.close();
         mailRecipient.disabled = false;
         paperTrashButton.disabled = false;
         paperSendButton.disabled = false;
-        button.textContent = '기록 저장';
-        if (downloadRequested) {
-          discardAllRecords();
-          announcement.textContent = "다운로드를 요청하고 기록을 초기화했습니다. 다음 기록에는 새 방문객 번호가 부여됩니다.";
-        }
+        button.textContent = '저장';
+        showRecordSaveResult(saveSucceeded);
         positionMailDialog();
       }
     });
@@ -4901,6 +5353,7 @@ const ROOM_BACK_POSITIONS = {
       imageWorld.style.transition = "none";
       roomStates.mother.motherCameraPage = null;
       currentRoom = roomId;
+      syncExhibitionRestart();
       updateLivingMusicRoomSound(roomId);
       composing = false;
 
@@ -5668,15 +6121,49 @@ window.typingMp3 = (() => {
     report('ZIP 파일 생성 중…');
     const blob=await zip.generateAsync({type:'blob',compression:'STORE'});
     const safeEmail=email.replace(/[<>:"/\\|?*\u0000-\u001f]/g,char=>encodeURIComponent(char));
-    const link=document.createElement('a'),url=URL.createObjectURL(blob);
-    link.href=url;link.download=`${safeEmail}.zip`;
-    document.body.appendChild(link);link.click();link.remove();
-    setTimeout(()=>URL.revokeObjectURL(url),60000);
+    report('파일 저장이 끝나기를 기다리고 있습니다…');
+    await saveExhibitionBlob(blob, `${safeEmail}.zip`);
     return result.missing;
   }
   function reset() {roomTokens.clear();sentences.length=0;active=null;}
   return {capture,finishSentence,snapshot,saveZip,reset};
 })();
+
+
+    /* 전시용 재시작: 일반 화면과 현재 열린 모달에서 동일한 버튼 사용 */
+    const exhibitionRestart = document.createElement("button");
+    exhibitionRestart.type = "button";
+    exhibitionRestart.id = "exhibitionRestart";
+    exhibitionRestart.className = "exhibition-restart";
+    exhibitionRestart.hidden = true;
+    exhibitionRestart.setAttribute("aria-label", "기록을 지우고 새 관람 시작");
+    exhibitionRestart.title = "새 관람 시작 — 저장하지 않은 기록이 지워집니다";
+    exhibitionRestart.textContent = "비상구";
+
+    function syncExhibitionRestart() {
+      const openDialogs = Array.from(document.querySelectorAll("dialog[open]"));
+      const host = openDialogs[openDialogs.length - 1] || document.body;
+      if (exhibitionRestart.parentNode !== host) host.appendChild(exhibitionRestart);
+      exhibitionRestart.hidden = currentRoom === "entrance";
+      const busy = pdfDownloading || previewBuilding;
+      exhibitionRestart.disabled = busy;
+      exhibitionRestart.setAttribute("aria-busy", String(busy));
+    }
+    exhibitionRestart.addEventListener("pointerdown", event => event.stopPropagation());
+    exhibitionRestart.addEventListener("click", event => {
+      event.preventDefault();
+      event.stopPropagation();
+      if (pdfDownloading || previewBuilding) return;
+      exhibitionRestart.disabled = true;
+      window.location.reload();
+    });
+    const restartDialogObserver = new MutationObserver(syncExhibitionRestart);
+    restartDialogObserver.observe(document.body, {
+      subtree: true, attributes: true, attributeFilter: ["open"]
+    });
+    // 비동기 파일 생성 상태도 버튼 표시와 동기화합니다.
+    window.setInterval(syncExhibitionRestart, 200);
+    syncExhibitionRestart();
 
     renderRoom("entrance");
   </script>
