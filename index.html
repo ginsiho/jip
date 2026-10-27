@@ -1,6 +1,7 @@
 
 
 
+
 <!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -3748,163 +3749,206 @@ const originalHeight =
 
     /* 記録: テキストとは独立した図形の改行・改ページ */
     const RECORD_SCORE = {
-      color: "#242321", opacity: 0.65, strokeEm: 0.025,
-      cellEm: 0.92, gapEm: 0.3, squareEm: 0.5,
-      circleDiameterEm: 0.48, circleGapEm: 0.06,
-      overlapEm: 0.002, spaceEm: 0.55
+      color: "#000000", opacity: 1, strokeEm: 0.045,
+      cellEm: 0.9, gapEm: 0.2, squareEm: 0.7,
+      circleDiameterEm: 0.58, circleGapEm: 0.06,
+      spaceEm: 0.55, textGapEm: 0.35, verticalGapEm: 0.04
     };
+    // 폰트 파일을 눈으로 비교한 실측값이 아닌, 조정 가능한 시작값입니다.
+    const RECORD_FONT_STROKE_EM = {
+      FontA: 0.07, FontB: 0.065, FontC: 0.06, FontD: 0.045
+    };
+    function getRecordStrokeEm(fontFamily) {
+      const name = fontFamily.split(',')[0].trim().replace(/["']/g, '');
+      return RECORD_FONT_STROKE_EM[name] ?? RECORD_SCORE.strokeEm;
+    }
     let recordScorePages = [];
 
-    function paginateScoreLines(lines, geometry, maxPages = 200) {
-      const {left, right, top, bottom, fs, lineHeight} = geometry;
+    function paginateScoreLines(tokens, geometry, pageObstacles, maxPages = 200) {
+      const {left, right, top, bottom, fs, lineHeight, separatorWidth, strokeEm} = geometry;
       const cfg = RECORD_SCORE;
+      const stroke = fs * strokeEm;
       const cell = fs * cfg.cellEm;
-      const stroke = fs * cfg.strokeEm;
-      const square = fs * cfg.squareEm;
-      const diameter = fs * cfg.circleDiameterEm;
-      const circleGap = fs * cfg.circleGapEm;
+      const naturalHeight = Math.max(cfg.squareEm,
+        cfg.circleDiameterEm * 3 + cfg.circleGapEm * 2) * fs;
+      const fit = Math.min(1, (lineHeight * 0.88 - stroke) / naturalHeight);
+      if (!(fit > 0) || right - left < cell + stroke) {
+        throw new Error('여백 안에 도형을 배치할 수 없습니다. 글자 크기와 여백을 조절해주세요.');
+      }
+      const square = fs * cfg.squareEm * fit;
+      const diameter = fs * cfg.circleDiameterEm * fit;
+      const circleGap = fs * cfg.circleGapEm * fit;
       const stack = diameter * 3 + circleGap * 2;
       const symbolHeight = Math.max(square, stack);
+      const gap = fs * cfg.gapEm;
+      const verticalGap = fs * cfg.verticalGapEm;
       const xStart = left + stroke / 2;
       const xEnd = right - stroke / 2;
-      const firstBottom = top + symbolHeight + stroke / 2;
-      const lastBottom = bottom - stroke / 2;
-      if (xEnd - xStart < Math.max(cell, square, diameter) || firstBottom > lastBottom) {
-        throw new Error('도형이 기록 여백 안에 들어가지 않습니다. 도형 크기를 줄여주세요.');
-      }
-      const pages = [];
-      /* 첫 글줄의 도형은 상단 여백 보정 없이 글자 기준으로 배치 */
-let page = 0;
-let rowBottom = -Infinity;
-let x = xStart;
-
-      function ensurePage() {
-        if (page >= maxPages) throw new Error('도형 기록이 200페이지를 넘습니다.');
-        while (pages.length <= page) pages.push([]);
-      }
-      function checkBottom() {
-        if (rowBottom > lastBottom) {
-          page++;
-          rowBottom = firstBottom;
-          x = xStart;
+      const pages = pageObstacles.map(() => []);
+      let tokenIndex = 0;
+      const usedSeparators = new Set();
+      for (let page = 0; page < maxPages && tokenIndex < tokens.length; page++) {
+        if (!pages[page]) pages[page] = [];
+        const info = pageObstacles[page] || {boxes: [], firstCenter: null};
+        const rowOrigin = Math.max(top + stroke / 2,
+          info.firstCenter === null ? top + (lineHeight - symbolHeight) / 2 :
+          info.firstCenter - symbolHeight / 2);
+        if (rowOrigin + symbolHeight + stroke / 2 > bottom) {
+          throw new Error('도형을 놓을 수 있는 줄이 없습니다. 글자 크기와 여백을 조절해주세요.');
         }
-        ensurePage();
-      }
-      for (const line of lines) {
-        if (!line.tokens.some(token => token !== 'space')) continue;
-        if (page < line.page) {
-  page = line.page;
-
-  /* 새 텍스트 페이지의 첫 줄도 글자 기준으로 배치 */
-  rowBottom = -Infinity;
-}
-        if (page === line.page) rowBottom = Math.max(rowBottom, line.anchor);
-        x = xStart;
-        checkBottom();
-        for (const token of line.tokens) {
-          if (token === 'space') {
-            x = Math.min(xEnd, x + fs * cfg.spaceEm);
-            continue;
+        for (let y = rowOrigin; y + symbolHeight + stroke / 2 <= bottom + 0.001;
+             y += lineHeight) {
+          const centerY = y + symbolHeight / 2;
+          const hits = info.boxes.filter(box =>
+            y + symbolHeight + stroke / 2 > box.top - verticalGap &&
+            y - stroke / 2 < box.bottom + verticalGap);
+          if (hits.some(box => box.divider)) continue;
+          // 글이 있는 줄에서는 가장 오른쪽 글자 뒤에만 도형을 놓습니다.
+          const last = hits.reduce((best, box) => !best || box.right > best.right ? box : best, null);
+          const separatorKey = last ? page + ':' + last.id : null;
+          const needsSeparator = !!last && !usedSeparators.has(separatorKey);
+          let x = last ? Math.max(xStart, last.right + (needsSeparator ? separatorWidth : fs * cfg.textGapEm)) : xStart;
+          if (x + cell > xEnd + 0.001) continue;
+          while (tokens[tokenIndex] === 'space') tokenIndex++;
+          if (tokenIndex >= tokens.length) break;
+          if (needsSeparator) {
+            pages[page].push({tag: 'separator', x: last.right,
+              top: last.top, height: last.bottom - last.top,
+              width: separatorWidth});
+            usedSeparators.add(separatorKey);
           }
-          if (x + cell > xEnd) {
-            rowBottom += lineHeight;
-            x = xStart;
-            checkBottom();
+          while (tokenIndex < tokens.length) {
+            const token = tokens[tokenIndex];
+            if (token === 'space') {
+              tokenIndex++;
+              x += fs * cfg.spaceEm;
+              continue;
+            }
+            if (x + cell > xEnd + 0.001) break;
+            if (token === 'circles') {
+              for (let i = 0; i < 3; i++) pages[page].push({
+                tag: 'circle', cx: x + cell / 2,
+                cy: centerY - stack / 2 + diameter / 2 + i * (diameter + circleGap),
+                r: diameter / 2
+              });
+            } else {
+              pages[page].push({tag: 'rect', x: x + (cell - square) / 2,
+                y: centerY - square / 2, width: square, height: square});
+            }
+            tokenIndex++;
+            x += cell + gap;
           }
-          const shapes = pages[page];
-          if (token === 'circles') {
-            for (let i = 0; i < 3; i++) shapes.push({
-              tag: 'circle', cx: x + cell / 2,
-              cy: rowBottom - stack + diameter / 2 + i * (diameter + circleGap),
-              r: diameter / 2
-            });
-          } else {
-            shapes.push({tag: 'rect', x: x + (cell - square) / 2,
-              y: rowBottom - square, width: square, height: square});
-          }
-          x += cell + fs * cfg.gapEm;
+          if (tokenIndex >= tokens.length) break;
         }
-        rowBottom += lineHeight;
       }
-      return pages;
+      if (tokenIndex < tokens.length) throw new Error('도형 기록이 200페이지를 넘습니다.');
+      return pages.length ? pages : [[]];
     }
 
     function buildRecordScorePages(textPages, layout) {
       const render = createRenderStage(layout);
+      const range = document.createRange();
       try {
-        const fullText = textPages.join('');
-        const newline = String.fromCharCode(10);
-        const carriage = String.fromCharCode(13);
-        const ignored = [];
-        const visitorHeader = fullText.match(/^방문객 \d+\n\n/);
-        if (visitorHeader) ignored.push([0, visitorHeader[0].length]);
-        let paragraphStart = 0;
-        for (const paragraph of fullText.split(newline)) {
+        const left = layout.left * PDF_WIDTH;
+        const right = (1 - layout.right) * PDF_WIDTH;
+        const tokens = [];
+        for (const paragraph of textPages.join('').split('\n')) {
           const mark = paragraph.indexOf(' ··· ');
-          if (mark >= 0) ignored.push([paragraphStart + mark, paragraphStart + paragraph.length]);
-          paragraphStart += paragraph.length + 1;
+          const content = mark >= 0 ? paragraph.slice(0, mark) : paragraph;
+          for (const char of content) {
+            if (/\s/u.test(char)) {
+              if (tokens.length && tokens[tokens.length - 1] !== 'space') tokens.push('space');
+              continue;
+            }
+            for (const jamo of decomposeCharacter(char)) {
+              if (!CHOSEONG.includes(jamo) && !JUNGSEONG.includes(jamo)) continue;
+              tokens.push(elasticJamos.has(jamo) ? 'circles' : 'square');
+            }
+          }
+          if (tokens.length && tokens[tokens.length - 1] !== 'space') tokens.push('space');
         }
-        const lines = [];
-        const range = document.createRange();
-        let globalStart = 0;
-        for (let page = 0; page < textPages.length; page++) {
-          render.text.textContent = textPages[page];
+        while (tokens[tokens.length - 1] === 'space') tokens.pop();
+        // 공백을 포함한 구분자 폭을 실제 본문 폰트로 측정합니다.
+        const probe = document.createElement('span');
+        probe.textContent = '  |  ';
+        Object.assign(probe.style, {position: 'absolute', whiteSpace: 'pre',
+          fontFamily: layout.fontFamily, fontSize: layout.fontSize + 'px',
+          fontWeight: layout.fontWeight, fontStyle: layout.fontStyle,
+          letterSpacing: layout.letterSpacing + 'px', lineHeight: '1'});
+        render.page.appendChild(probe);
+        const separatorWidth = probe.getBoundingClientRect().width;
+        const probeRange = document.createRange();
+        probeRange.selectNodeContents(probe);
+        const separatorInkOffset = probeRange.getBoundingClientRect().top - probe.getBoundingClientRect().top;
+        probeRange.detach();
+        probe.remove();
+        layout.separatorInkOffset = separatorInkOffset;
+        layout.scoreStrokeEm = getRecordStrokeEm(layout.fontFamily);
+        const pageObstacles = [];
+        for (const text of textPages) {
+          render.text.textContent = text;
           const node = render.text.firstChild;
+          const info = {boxes: [], firstCenter: null};
+          pageObstacles.push(info);
           if (!node) continue;
           const pageBounds = render.page.getBoundingClientRect();
           let offset = 0;
-          let line = null;
+          const measuredLines = [];
           for (const char of node.data) {
             const start = offset;
             offset += char.length;
-            const absolute = globalStart + start;
-            if (char === newline || char === carriage || ignored.some(([a,b]) => absolute >= a && absolute < b)) continue;
+            if (char === '\n' || char === '\r') continue;
             range.setStart(node, start);
             range.setEnd(node, offset);
             const bounds = range.getBoundingClientRect();
             if (!bounds.height) continue;
             const y = bounds.top - pageBounds.top;
-            if (!line || Math.abs(line.y - y) > 1) {
-              line = {page, y, anchor: y + layout.fontSize * RECORD_SCORE.overlapEm, tokens: []};
-              lines.push(line);
+            let line = measuredLines[measuredLines.length - 1];
+            if (!line || Math.abs(line.top - y) > 1) {
+              line = {id: measuredLines.length, left, right: left, top: y,
+                bottom: bounds.bottom - pageBounds.top, content: ''};
+              measuredLines.push(line);
             }
-            if (char.trim() === '') line.tokens.push('space');
-            else {
-              for (const jamo of decomposeCharacter(char)) {
-                if (!CHOSEONG.includes(jamo) && !JUNGSEONG.includes(jamo)) continue;
-                line.tokens.push(elasticJamos.has(jamo) ? 'circles' : 'square');
-              }
-            }
+            line.content += char;
+            line.right = Math.max(line.right, bounds.right - pageBounds.left);
+            line.bottom = Math.max(line.bottom, bounds.bottom - pageBounds.top);
           }
-          globalStart += textPages[page].length;
+          for (const line of measuredLines) {
+            if (!line.content.trim()) continue;
+            if (info.firstCenter === null) info.firstCenter = (line.top + line.bottom) / 2;
+            line.divider = /^-{3,}$/.test(line.content.trim());
+            if (line.divider) line.right = right;
+            info.boxes.push(line);
+          }
         }
-        range.detach();
-        return paginateScoreLines(lines, {
-          left: layout.left * PDF_WIDTH,
-          right: (1 - layout.right) * PDF_WIDTH,
-          top: layout.top * PDF_HEIGHT,
+        return paginateScoreLines(tokens, {
+          left, right, top: layout.top * PDF_HEIGHT,
           bottom: (1 - layout.bottom) * PDF_HEIGHT,
-          fs: layout.fontSize,
-          lineHeight: layout.fontSize * layout.lineHeight
-        }, MAX_PDF_PAGES);
-      } finally { render.stage.remove(); }
+          fs: layout.fontSize, lineHeight: layout.fontSize * layout.lineHeight,
+          separatorWidth, strokeEm: layout.scoreStrokeEm
+        }, pageObstacles, MAX_PDF_PAGES);
+      } finally {
+        range.detach();
+        render.stage.remove();
+      }
     }
 
-    function recordScoreSvg(shapes, fs) {
+    function recordScoreSvg(shapes, fs, strokeEm = RECORD_SCORE.strokeEm) {
       const cfg = RECORD_SCORE;
-      const content = shapes.map(({tag, ...attrs}) =>
+      const content = shapes.filter(shape => shape.tag !== 'separator').map(({tag, ...attrs}) =>
         '<' + tag + ' ' + Object.entries(attrs).map(([k,v]) => k + '="' + v + '"').join(' ') + '/>'
       ).join('');
       return '<svg xmlns="http://www.w3.org/2000/svg" width="' + PDF_WIDTH + '" height="' + PDF_HEIGHT +
         '" viewBox="0 0 ' + PDF_WIDTH + ' ' + PDF_HEIGHT + '">' +
-        '<g fill="none" stroke="' + cfg.color + '" stroke-width="' + (fs * cfg.strokeEm) +
+        '<g fill="none" stroke="' + cfg.color + '" stroke-width="' + (fs * strokeEm) +
         '" opacity="' + cfg.opacity + '">' + content + '</g></svg>';
     }
 
     async function placeRecordScore(page, shapes, layout, pdf = false) {
       page.querySelectorAll('.record-score-overlay').forEach(el => el.remove());
       if (!shapes?.length) return;
-      const markup = recordScoreSvg(shapes, layout.fontSize);
+      const markup = recordScoreSvg(shapes, layout.fontSize,
+        layout.scoreStrokeEm ?? getRecordStrokeEm(layout.fontFamily));
       if (pdf) {
         const image = new Image();
         image.className = 'record-score-overlay';
@@ -3917,6 +3961,27 @@ let x = xStart;
         layer.className = 'record-score-overlay';
         layer.setAttribute('aria-hidden', 'true');
         layer.innerHTML = markup;
+        page.appendChild(layer);
+      }
+      // 구분자는 SVG에 글꼴을 대체해서 넣지 않고 실제 본문 웹폰트로 그립니다.
+      const separators = shapes.filter(shape => shape.tag === 'separator');
+      if (separators.length) {
+        const layer = document.createElement('div');
+        layer.className = 'record-score-overlay';
+        layer.setAttribute('aria-hidden', 'true');
+        const scale = page.clientWidth / PDF_WIDTH;
+        for (const separator of separators) {
+          const span = document.createElement('span');
+          span.textContent = '  |  ';
+          Object.assign(span.style, {position: 'absolute', display: 'block',
+            left: separator.x * scale + 'px',
+            top: (separator.top - (layout.separatorInkOffset || 0)) * scale + 'px',
+            fontFamily: layout.fontFamily, fontWeight: layout.fontWeight,
+            fontStyle: layout.fontStyle, fontSize: layout.fontSize * scale + 'px',
+            letterSpacing: layout.letterSpacing * scale + 'px',
+            lineHeight: '1', whiteSpace: 'pre', color: '#000000', opacity: '1'});
+          layer.appendChild(span);
+        }
         page.appendChild(layer);
       }
     }
@@ -4000,7 +4065,7 @@ let x = xStart;
       }
       syncJamoImages();
       window.typingMp3?.finishSentence();
-      previewSnapshot = `방문객 ${visitorNumber}\n\n${getChronologicalText()}`;
+      previewSnapshot = `방문객 ${visitorNumber}\n----\n${getChronologicalText()}`;
       previewContent.textContent = previewSnapshot;
       recordPages = [];
       recordLayout = null;
