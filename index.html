@@ -1,10 +1,6 @@
 
 
 
-
-
-
-
 <!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -1214,6 +1210,100 @@ html *::after,
   cursor: var(--triangle-cursor, none) !important;
 }
 
+/* 창고 전용 고정 배경 */
+.storage-photo-archive {
+  background-color: #000000;
+  background-image: url("./images/backgrounds/storage-fixed.png");
+  background-position: center;
+  background-size: cover;
+  background-repeat: no-repeat;
+}
+/* 식탁의 유리 이미지 레이어 */
+.jamo-tile .kitchen-glass {
+  position: absolute;
+  top: 0;
+  left: 0;
+
+  display: block;
+  max-width: none;
+  max-height: none;
+
+  transform-origin: 0 0;
+  pointer-events: none;
+
+  /* 원본 이미지의 투명 영역을 따라 모양을 자름 */
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+
+  -webkit-mask-position: center;
+  mask-position: center;
+
+  -webkit-mask-size: 100% 100%;
+  mask-size: 100% 100%;
+
+  -webkit-mask-mode: alpha;
+  mask-mode: alpha;
+
+  /* 바탕은 거의 투명하게 유지 */
+  background-color: rgba(255, 255, 255, 0.035);
+
+  /* 일반적인 유리 표현을 기본값으로 둠 */
+  -webkit-backdrop-filter: brightness(1.06);
+  backdrop-filter: brightness(1.06);
+
+  /* 지원하는 브라우저에서는 배경 왜곡 적용 */
+  -webkit-backdrop-filter:
+    url("#kitchen-glass-refraction")
+    brightness(1.06);
+
+  backdrop-filter:
+    url("#kitchen-glass-refraction")
+    brightness(1.06);
+}
+
+/* 유리 표면의 약한 빛 반사 */
+.jamo-tile .kitchen-glass::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+
+  pointer-events: none;
+
+  background: linear-gradient(
+    125deg,
+    rgba(255, 255, 255, 0.24) 0%,
+    rgba(255, 255, 255, 0.06) 18%,
+    transparent 38%,
+    transparent 65%,
+    rgba(255, 255, 255, 0.10) 100%
+  );
+}
+
+/* 유리 실루엣을 따라가는 반사광 */
+.jamo-tile .kitchen-glass .kitchen-glass-rim {
+  position: absolute;
+  inset: 0;
+
+  width: 100%;
+  height: 100%;
+
+  display: block;
+  max-width: none;
+  max-height: none;
+
+  filter: url("#kitchen-glass-rim");
+  opacity: 1;
+
+  pointer-events: none;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+/* 내부에는 아주 약한 밝기만 남김 */
+.jamo-tile .kitchen-glass {
+  background-color: rgba(255, 255, 255, 0.06);
+}
+
   </style>
   <script>
   (() => {
@@ -1655,7 +1745,7 @@ html *::after,
       mother: {
         name: "큰방",
         color: "#000000",
-        scale: 0.4,
+        scale: 0.3,
         mode: "puzzle",
         parent: "upstairs"
       },
@@ -1664,7 +1754,7 @@ html *::after,
         name: "내 방",
         color: "#000000",
         mode: "scatter",
-        scale: 1,
+        scale: 0.5,
         parent: "upstairs",
         links: [
           {
@@ -1865,10 +1955,13 @@ function shuffleLivingPlaylist(list) {
     let livingMusicGraph = null;
     const LIVING_MUSIC_ROOM_SOUND = {
       living: { cutoff: 20000, gain: 0.7 },
-      storage: { cutoff: 650, gain: 0.18 }
+      storage: { cutoff: 650, gain: 0.18 },
+      hall: { cutoff: 650, gain: 0.18 }
     };
-    function isLivingMusicRoom(roomId) {
-      return roomId === "living" || roomId === "storage";
+    const LIVING_MUSIC_SILENT = { cutoff: 650, gain: 0 };
+    let livingMusicWanted = false;
+    function getLivingMusicRoomSound(roomId) {
+      return LIVING_MUSIC_ROOM_SOUND[roomId] || LIVING_MUSIC_SILENT;
     }
     function updateLivingMusicButton() {
       const button = document.getElementById("livingMusicButton");
@@ -1895,15 +1988,14 @@ function shuffleLivingPlaylist(list) {
       gain.connect(ctx.destination);
       livingMusicGraph = { ctx, source, lowpassA, lowpassB, gain };
       livingMusic.volume = 1;
-      const settings = LIVING_MUSIC_ROOM_SOUND[currentRoom] || LIVING_MUSIC_ROOM_SOUND.living;
+      const settings = getLivingMusicRoomSound(currentRoom);
       lowpassA.frequency.value = lowpassB.frequency.value = Math.min(settings.cutoff, ctx.sampleRate * 0.49);
       gain.gain.value = settings.gain;
       return livingMusicGraph;
     }
-    /* 거실은 선명하게, 창고는 문 너머처럼 작고 먹먹하게 전환한다. */
+    /* 방 이동은 재생을 멈추지 않고 음색과 출력 볼륨만 바꿉니다. */
     function updateLivingMusicRoomSound(roomId) {
-      const settings = LIVING_MUSIC_ROOM_SOUND[roomId];
-      if (!settings) return;
+      const settings = getLivingMusicRoomSound(roomId);
       if (!livingMusicGraph) {
         livingMusic.volume = settings.gain;
         return;
@@ -1918,7 +2010,7 @@ function shuffleLivingPlaylist(list) {
       }
       gain.gain.cancelScheduledValues(now);
       gain.gain.setValueAtTime(gain.gain.value, now);
-      gain.gain.setTargetAtTime(settings.gain, now, 0.16);
+      gain.gain.linearRampToValueAtTime(settings.gain, now + 0.35);
     }
     function setLivingMusicTrack(index) {
       if (!livingPlaylist[index]) return;
@@ -1928,22 +2020,24 @@ function shuffleLivingPlaylist(list) {
       livingMusic.load();
     }
     async function playLivingMusic() {
-      if (!isLivingMusicRoom(currentRoom)) return;
+      if (!livingMusicWanted) return;
       const request = ++livingMusicRequest;
       livingMusicPending = true;
       try {
         const graph = ensureLivingMusicGraph();
         if (graph && graph.ctx.state === "suspended") await graph.ctx.resume();
-        /* 준비 중 다른 공간으로 나가거나 일시정지했다면 재생하지 않는다. */
-        if (request !== livingMusicRequest || !isLivingMusicRoom(currentRoom)) return;
+        /* 방 이동은 허용하고, 사용자가 취소한 재생 요청만 중단합니다. */
+        if (request !== livingMusicRequest || !livingMusicWanted) return;
         updateLivingMusicRoomSound(currentRoom);
         await livingMusic.play();
+        if (!livingMusicWanted) livingMusic.pause();
         if (request !== livingMusicRequest) return;
         livingMusicPending = false;
         updateLivingMusicButton();
       } catch (error) {
         if (request !== livingMusicRequest) return;
         livingMusicPending = false;
+        livingMusicWanted = false;
         updateLivingMusicButton();
         console.error("거실 음악 재생 실패:", error);
         announcement.textContent = "음악을 재생하지 못했습니다. 오디오 파일 경로와 재생 권한을 확인해주세요.";
@@ -1951,7 +2045,8 @@ function shuffleLivingPlaylist(list) {
     }
     function toggleLivingMusic() {
       if (currentRoom !== "living") return;
-      if (livingMusicPending || !livingMusic.paused) {
+      if (livingMusicWanted || livingMusicPending || !livingMusic.paused) {
+        livingMusicWanted = false;
         livingMusicRequest++;
         livingMusicPending = false;
         livingMusic.pause();
@@ -1960,27 +2055,16 @@ function shuffleLivingPlaylist(list) {
       }
       if (!livingTrackLoaded) {
         if (!livingPlaylist.length) return;
-        setLivingMusicTrack(livingTrackIndex);
+        livingPlaylist = shuffleLivingPlaylist(livingPlaylist);
+        setLivingMusicTrack(0);
       }
+      livingMusicWanted = true;
       playLivingMusic();
     }
-    function stopLivingMusic() {
-      livingMusicRequest++;
-      livingMusicPending = false;
-      livingMusic.pause();
-      livingMusic.removeAttribute("src");
-      livingMusic.load();
-      livingTrackIndex = 0;
-      livingTrackLoaded = false;
-      updateLivingMusicButton();
-    }
-    /* 창고에서도 곡이 끝나면 현재 목록의 다음 곡으로 이어진다. */
+    // 음소거된 방에서도 곡을 이어가고, 마지막 곡 다음에는 첫 곡을 재생합니다.
     livingMusic.addEventListener("ended", () => {
-      if (!isLivingMusicRoom(currentRoom) || livingTrackIndex + 1 >= livingPlaylist.length) {
-        stopLivingMusic();
-        return;
-      }
-      setLivingMusicTrack(livingTrackIndex + 1);
+      if (!livingMusicWanted || !livingPlaylist.length) return;
+      setLivingMusicTrack((livingTrackIndex + 1) % livingPlaylist.length);
       playLivingMusic();
     });
     livingMusic.addEventListener("playing", updateLivingMusicButton);
@@ -2129,7 +2213,45 @@ button.addEventListener("click", () => {
       "./images/backgrounds/storage/10.png",
       "./images/backgrounds/storage/11.png",
       "./images/backgrounds/storage/12.png",
-      "./images/backgrounds/storage/13.png"
+      "./images/backgrounds/storage/13.png",
+      "./images/backgrounds/storage/14.png",
+      "./images/backgrounds/storage/15.png",
+      "./images/backgrounds/storage/16.png",
+      "./images/backgrounds/storage/17.png",
+      "./images/backgrounds/storage/18.png",
+      "./images/backgrounds/storage/19.png",
+      "./images/backgrounds/storage/20.png",
+      "./images/backgrounds/storage/21.png",
+      "./images/backgrounds/storage/22.png",
+      "./images/backgrounds/storage/23.png",
+      "./images/backgrounds/storage/24.png",
+      "./images/backgrounds/storage/25.png",
+      "./images/backgrounds/storage/26.png",
+      "./images/backgrounds/storage/27.png",
+      "./images/backgrounds/storage/28.png",
+      "./images/backgrounds/storage/29.png",
+      "./images/backgrounds/storage/30.png",
+      "./images/backgrounds/storage/31.png",
+      "./images/backgrounds/storage/32.png",
+      "./images/backgrounds/storage/33.png",
+      "./images/backgrounds/storage/34.png",
+      "./images/backgrounds/storage/35.png",
+      "./images/backgrounds/storage/36.png",
+      "./images/backgrounds/storage/37.png",
+      "./images/backgrounds/storage/38.png",
+      "./images/backgrounds/storage/39.png",
+      "./images/backgrounds/storage/40.png",
+      "./images/backgrounds/storage/41.png",
+      "./images/backgrounds/storage/42.png",
+      "./images/backgrounds/storage/43.png",
+      "./images/backgrounds/storage/44.png",
+      "./images/backgrounds/storage/45.png",
+      "./images/backgrounds/storage/46.png",
+      "./images/backgrounds/storage/47.png",
+      "./images/backgrounds/storage/48.png",
+      "./images/backgrounds/storage/49.png",
+      "./images/backgrounds/storage/50.png",
+      "./images/backgrounds/storage/51.png"
 
     ],
     "speedRatio": 0.45,
@@ -2922,39 +3044,101 @@ button.addEventListener("click", () => {
       return `grayscale(1) sepia(1) saturate(${saturation}) hue-rotate(${hue}deg) brightness(${brightness})`;
     }
 
-    function refreshRoomVisual(record) {
-      if (record.roomId === "living") {
-        record.visual.style.filter = record.livingFilter;
-      }
-      if (record.roomId !== "kitchen" || !record.imageLoaded) return;
+function refreshRoomVisual(record) {
+  /* 거실의 기존 색상 효과 유지 */
+  if (record.roomId === "living") {
+    record.visual.style.filter = record.livingFilter;
+  }
 
-      if (!record.wordStart) {
-        if (!record.mosaicCanvas) {
-          const canvas = document.createElement("canvas");
-          canvas.setAttribute("role", "img");
-          canvas.setAttribute("aria-label", `${record.jamo} 모자이크`);
-          const scale = rooms.kitchen.scale *
-            (elasticJamos.has(record.jamo) ? 0.5 : 1);
-          canvas.width = Math.max(1, Math.round(
-            record.naturalWidth * scale / ROOM_EFFECTS.kitchenMosaicBlock
-          ));
-          canvas.height = Math.max(1, Math.round(
-            record.naturalHeight * scale / ROOM_EFFECTS.kitchenMosaicBlock
-          ));
-          const context = canvas.getContext("2d");
-          if (!context) return;
-          context.drawImage(record.originalImage, 0, 0, canvas.width, canvas.height);
-          record.mosaicCanvas = canvas;
-        }
-        if (record.visual !== record.mosaicCanvas) {
-          record.visual.replaceWith(record.mosaicCanvas);
-          record.visual = record.mosaicCanvas;
-        }
-      } else if (record.visual !== record.originalImage) {
-        record.visual.replaceWith(record.originalImage);
-        record.visual = record.originalImage;
-      }
+  /* 식탁에서 정상 로딩된 이미지에만 적용 */
+  if (record.roomId !== "kitchen" || !record.imageLoaded) {
+    return;
+  }
+
+  const original = record.originalImage;
+
+  /* 앞서 적용했던 흑백·반투명 효과 제거 */
+  original.style.filter = "none";
+  original.style.opacity = "1";
+
+  if (record.wordStart) {
+    /*
+      단어 시작 이미지는 원본 유지.
+      기존 유리 레이어나 모자이크 캔버스가 있으면 교체.
+    */
+    if (record.visual !== original) {
+      record.visual.replaceWith(original);
+      record.visual = original;
     }
+
+    return;
+  }
+
+  /*
+    기존 모자이크 대상에 유리 레이어 생성.
+    원본 이미지는 형태를 정하는 마스크로만 사용.
+  */
+  if (!record.glassElement) {
+    const glass = document.createElement("div");
+
+    glass.className = "kitchen-glass";
+    glass.setAttribute("role", "img");
+    glass.setAttribute("aria-label", record.jamo);
+
+    record.glassElement = glass;
+  }
+
+  const glass = record.glassElement;
+
+  const imageSrc =
+    original.currentSrc || original.src;
+
+  const maskImage =
+    `url(${JSON.stringify(imageSrc)})`;
+    /* 유리 외곽 반사광 레이어 */
+let rim = glass.querySelector(".kitchen-glass-rim");
+
+if (!rim) {
+  rim = document.createElement("img");
+
+  rim.className = "kitchen-glass-rim";
+  rim.alt = "";
+  rim.draggable = false;
+  rim.setAttribute("aria-hidden", "true");
+
+  glass.appendChild(rim);
+}
+
+if (rim.getAttribute("src") !== imageSrc) {
+  rim.setAttribute("src", imageSrc);
+}
+
+  glass.style.setProperty(
+    "-webkit-mask-image",
+    maskImage
+  );
+
+  glass.style.setProperty(
+    "mask-image",
+    maskImage
+  );
+
+  /*
+    기존 크기와 변형값을 넘겨서 교체 순간의
+    크기 변화나 깜빡임을 줄임.
+    이후 크기는 기존 layoutImages()가 관리.
+  */
+  if (record.visual !== glass) {
+    const previous = record.visual;
+
+    glass.style.width = previous.style.width;
+    glass.style.height = previous.style.height;
+    glass.style.transform = previous.style.transform;
+
+    previous.replaceWith(glass);
+    record.visual = glass;
+  }
+}
 
     function createTile(jamo, roomId) {
       const element = document.createElement("div");
@@ -3652,6 +3836,8 @@ let x = xStart;
         const newline = String.fromCharCode(10);
         const carriage = String.fromCharCode(13);
         const ignored = [];
+        const visitorHeader = fullText.match(/^방문객 \d+\n\n/);
+        if (visitorHeader) ignored.push([0, visitorHeader[0].length]);
         let paragraphStart = 0;
         for (const paragraph of fullText.split(newline)) {
           const mark = paragraph.indexOf(' ··· ');
@@ -3784,10 +3970,37 @@ let x = xStart;
       }
     }
 
+    const VISITOR_COUNTER_KEY = "home-exhibition-visitor-counter-v1";
+    let currentVisitorNumber = null;
+
+    function getOrAssignVisitorNumber() {
+      if (currentVisitorNumber !== null) return currentVisitorNumber;
+      const raw = localStorage.getItem(VISITOR_COUNTER_KEY);
+      if (raw !== null && !/^\d+$/.test(raw)) {
+        throw new Error("저장된 방문객 번호가 올바르지 않습니다. 운영자에게 문의해주세요.");
+      }
+      const previous = raw === null ? 0 : Number(raw);
+      if (!Number.isSafeInteger(previous) || previous < 0 || previous >= Number.MAX_SAFE_INTEGER) {
+        throw new Error("방문객 번호 범위를 확인해주세요.");
+      }
+      const next = previous + 1;
+      localStorage.setItem(VISITOR_COUNTER_KEY, String(next));
+      currentVisitorNumber = next;
+      return next;
+    }
+
     async function openRecordPreview() {
+      if (pdfDownloading || previewBuilding) return;
+      let visitorNumber;
+      try {
+        visitorNumber = getOrAssignVisitorNumber();
+      } catch (error) {
+        alert(`방문객 번호를 저장하지 못했습니다. 브라우저 저장소 설정을 확인해주세요.\n${error.message}`);
+        return;
+      }
       syncJamoImages();
       window.typingMp3?.finishSentence();
-      previewSnapshot = getChronologicalText();
+      previewSnapshot = `방문객 ${visitorNumber}\n\n${getChronologicalText()}`;
       previewContent.textContent = previewSnapshot;
       recordPages = [];
       recordLayout = null;
@@ -3923,6 +4136,7 @@ let x = xStart;
       const layout = { ...recordLayout };
       const button = mailForm.querySelector('button[type="submit"]');
       let render = null;
+      let downloadRequested = false;
       pdfDownloading = true;
       button.disabled = true;
       mailRecipient.disabled = true;
@@ -3969,6 +4183,8 @@ let x = xStart;
           message => { mailStatus.textContent = message; }
         );
 
+downloadRequested = true;
+
 // 이메일과 상태 문구 비우기
 mailRecipient.value = "";
 mailStatus.textContent = "";
@@ -3985,6 +4201,10 @@ mailDialog.close();
         paperTrashButton.disabled = false;
         paperSendButton.disabled = false;
         button.textContent = '기록 저장';
+        if (downloadRequested) {
+          discardAllRecords();
+          announcement.textContent = "다운로드를 요청하고 기록을 초기화했습니다. 다음 기록에는 새 방문객 번호가 부여됩니다.";
+        }
         positionMailDialog();
       }
     });
@@ -4388,7 +4608,10 @@ const ROOM_BACK_POSITIONS = {
       visiblePatch: 28,
       expandedWidth: 1100,
       expandedRatio: 0.88,
-      layoutAttempts: 160
+      layoutAttempts: 12,
+      candidateAttempts: 64,
+      shrinkRatio: 0.9,
+      shrinkSteps: 32
     };
     let storageArchiveRoot = null;
     let storageArchiveItems = [];
@@ -4429,42 +4652,57 @@ const ROOM_BACK_POSITIONS = {
     }
 
     function computeStorageArchiveLayout(items, width, height) {
+      if (!items.length) return [];
       const cfg = STORAGE_ARCHIVE_OPTIONS;
       const edge = Math.min(cfg.edge, width * 0.06, height * 0.06);
-      const areaW = Math.max(1, width-edge*2), areaH = Math.max(1, height-edge*2);
-      const sizes = items.map(item => {
-        const scale = Math.min(item.preferredWidth/item.nw, cfg.maxHeight/item.nh,
-          areaW/item.nw, areaH/item.nh);
-        return {w:item.nw*scale, h:item.nh*scale};
+      const areaW = Math.max(1, width - edge * 2);
+      const areaH = Math.max(1, height - edge * 2);
+      const baseSizes = items.map(item => {
+        const scale = Math.min(item.preferredWidth / item.nw,
+          cfg.maxHeight / item.nh, areaW / item.nw, areaH / item.nh);
+        return {w: item.nw * scale, h: item.nh * scale};
       });
-      for (let attempt=0; attempt<cfg.layoutAttempts; attempt++) {
-        const rects = [];
-        sizes.forEach((size,index) => {
-          let x = edge + Math.random() * (areaW-size.w);
-          let y = edge + Math.random() * (areaH-size.h);
-          if (index > 0 && Math.random() < 0.8) {
-            const anchor = rects[Math.floor(Math.random()*rects.length)];
-            x = anchor.x + (Math.random()*1.2-0.35)*anchor.w;
-            y = anchor.y + (Math.random()*1.2-0.35)*anchor.h;
+      const clamp = (value, low, high) => Math.max(low, Math.min(high, value));
+
+      // 모든 사진에 노출 영역을 남기고, 실패하면 단계적으로 축소합니다.
+      for (let step = 0; step <= cfg.shrinkSteps; step++) {
+        const factor = Math.pow(cfg.shrinkRatio, step);
+        const sizes = baseSizes.map(size => ({w: size.w * factor, h: size.h * factor}));
+        for (let attempt = 0; attempt < cfg.layoutAttempts; attempt++) {
+          const rects = [];
+          let failed = false;
+          for (let index = 0; index < sizes.length; index++) {
+            const size = sizes[index];
+            let placed = false;
+            for (let trial = 0; trial < cfg.candidateAttempts; trial++) {
+              let x = edge + Math.random() * (areaW - size.w);
+              let y = edge + Math.random() * (areaH - size.h);
+              if (index > 0 && (index === 1 || Math.random() < 0.6)) {
+                const anchor = rects[Math.floor(Math.random() * rects.length)];
+                x = anchor.x + (Math.random() * 1.8 - 0.6) * anchor.w;
+                y = anchor.y + (Math.random() * 1.8 - 0.6) * anchor.h;
+              }
+              x = clamp(x, edge, width - edge - size.w);
+              y = clamp(y, edge, height - edge - size.h);
+              const candidate = {x, y, w: size.w, h: size.h};
+              const next = [...rects, candidate];
+              // 최소 한 쌍은 서로 겹치도록 합니다.
+              if (index === 1 && !archiveRectanglesOverlap(next)) continue;
+              if (!archiveAllPhotosExposed(next)) continue;
+              rects.push(candidate);
+              placed = true;
+              break;
+            }
+            if (!placed) {
+              failed = true;
+              break;
+            }
           }
-          x = Math.max(edge,Math.min(width-edge-size.w,x));
-          y = Math.max(edge,Math.min(height-edge-size.h,y));
-          rects.push({x,y,...size});
-        });
-        if (archiveAllPhotosExposed(rects) && (rects.length<2 || archiveRectanglesOverlap(rects))) return rects;
+          if (!failed && archiveAllPhotosExposed(rects) &&
+              (rects.length < 2 || archiveRectanglesOverlap(rects))) return rects;
+        }
       }
-      /* 사진이 많아 랜덤 배치가 어려우면 모두 보이는 배치로 전환 */
-      const columns = Math.min(items.length,Math.max(1,Math.ceil(Math.sqrt(items.length*areaW/areaH))));
-      const rows = Math.ceil(items.length/columns);
-      const cellW=areaW/columns,cellH=areaH/rows;
-      const gap=Math.min(12,cellW*0.12,cellH*0.12);
-      return items.map((item,index)=>{
-        const scale=Math.min((cellW-gap)/item.nw,(cellH-gap)/item.nh,
-          sizes[index].w/item.nw);
-        const w=item.nw*scale,h=item.nh*scale;
-        return {x:edge+(index%columns)*cellW+(cellW-w)/2,
-          y:edge+Math.floor(index/columns)*cellH+(cellH-h)/2,w,h};
-      });
+      throw new Error('창고 사진의 랜덤 배치를 만들지 못했습니다. 창 크기를 늘리거나 이미지 크기를 줄여주세요.');
     }
 
     function ensureStorageArchive() {
@@ -4544,7 +4782,7 @@ const ROOM_BACK_POSITIONS = {
       root.hidden = false;
       root.querySelector('.storage-photo-items').replaceChildren();
       const status = root.querySelector('.storage-photo-message');
-      status.textContent = '사진을 불러오고 있어요.';
+      status.textContent = '';
       const sources = [...new Set((ROOM_BACKGROUNDS.storage?.images || []).filter(Boolean))];
       for(let i=sources.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[sources[i],sources[j]]=[sources[j],sources[i]];}
       const loaded = await Promise.all(sources.map((src,index)=>new Promise(resolve=>{
@@ -4587,14 +4825,7 @@ const ROOM_BACK_POSITIONS = {
     });
 
     function renderRoom(roomId, moveFocus = false) {
-  /* 거실·창고 밖에서 거실에 들어올 때만 목록을 새로 섞는다. */
-  if (roomId === "living" && !isLivingMusicRoom(currentRoom)) {
-    stopLivingMusic();
-    livingPlaylist = shuffleLivingPlaylist(livingPlaylist);
-  }
-  /* 창고와 거실 사이에서는 곡과 재생·일시정지 상태를 유지한다. */
-  if (!isLivingMusicRoom(roomId)) stopLivingMusic();
-
+  /* 음악은 방 이동과 무관하게 유지하고 아래에서 방별 음향만 갱신합니다. */
   window.typingMp3?.finishSentence();
 
   const room = rooms[roomId];
@@ -5161,6 +5392,7 @@ document.addEventListener(
 
     function discardAllRecords() {
       if (pdfDownloading || previewBuilding) return;
+      currentVisitorNumber = null;
       clearFollowKeyTimeouts();
       window.typingMp3?.reset();
 
@@ -5383,6 +5615,85 @@ window.typingMp3 = (() => {
 
     renderRoom("entrance");
   </script>
- 
+ <!-- 식탁 이미지의 유리 왜곡 효과 -->
+<svg
+  xmlns="http://www.w3.org/2000/svg"
+  width="0"
+  height="0"
+  aria-hidden="true"
+  focusable="false"
+  style="position: absolute; pointer-events: none;"
+>
+  <defs>
+    <filter
+      id="kitchen-glass-refraction"
+      x="-20%"
+      y="-20%"
+      width="140%"
+      height="140%"
+      color-interpolation-filters="sRGB"
+    >
+      <feTurbulence
+        type="fractalNoise"
+        baseFrequency="0.012 0.018"
+        numOctaves="2"
+        seed="8"
+        result="glass-noise"
+      />
+
+      <feGaussianBlur
+        in="glass-noise"
+        stdDeviation="2"
+        result="glass-map"
+      />
+
+      <feDisplacementMap
+        in="SourceGraphic"
+        in2="glass-map"
+        scale="24"
+        xChannelSelector="R"
+        yChannelSelector="G"
+      />
+    </filter>
+    <!-- 이미지 가장자리 안쪽에 얇은 반사광 생성 -->
+<filter
+  id="kitchen-glass-rim"
+  x="-10%"
+  y="-10%"
+  width="120%"
+  height="120%"
+  color-interpolation-filters="sRGB"
+>
+  <!-- 원본 형태를 안쪽으로 조금 줄임 -->
+  <feMorphology
+    in="SourceAlpha"
+    operator="erode"
+    radius="0.8"
+    result="inner-shape"
+  />
+
+  <!-- 원본 형태에서 안쪽 형태를 빼 가장자리만 남김 -->
+  <feComposite
+    in="SourceAlpha"
+    in2="inner-shape"
+    operator="out"
+    result="rim"
+  />
+
+  <!-- 가장자리를 흰색 반사광으로 표시 -->
+  <feFlood
+    flood-color="#ffffff"
+    flood-opacity="0.65"
+    result="rim-color"
+  />
+
+  <feComposite
+    in="rim-color"
+    in2="rim"
+    operator="in"
+  />
+</filter>
+  </defs>
+</svg>
 </body>
 </html>
