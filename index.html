@@ -1,7 +1,3 @@
-
-
-
-
 <!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -1468,6 +1464,25 @@ html *::after,
   outline-offset: 2px;
 }
 
+
+/* 창고 사진 위치 이동: 브라우저 기본 이미지 드래그 대신 직접 이동 */
+.storage-photo-thumb {
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-user-drag: none;
+}
+.storage-photo-thumb img {
+  pointer-events: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-user-drag: none;
+}
+.storage-photo-thumb.is-photo-dragging {
+  transition: none;
+  animation: none;
+}
+
 </style>
   <script>
   (() => {
@@ -2700,7 +2715,7 @@ button.addEventListener("click", () => {
 
    
     const CLOSET_SOUND_CUTOFF = 350;
-    const CLOSET_SOUND_GAIN = 0.45;
+    const CLOSET_SOUND_GAIN = 0.8;
 
     const followSoundTimeouts = new Set();
     const audioBufferCache = new Map();
@@ -2873,7 +2888,7 @@ button.addEventListener("click", () => {
       }
 
       const audio = new Audio(src);
-      const roomGain = roomId === "myroom" ? 0.5 : 1;
+      const roomGain = roomId === "myroom" ? 1 : 1;
 
       audio.volume = Math.max(0, Math.min(volume, 1)) * roomGain;
       audio.currentTime = 0;
@@ -2901,7 +2916,7 @@ button.addEventListener("click", () => {
         source.playbackRate.value = roomId === "living" ? 2 : 1;
 
         const gainNode = ctx.createGain();
-        gainNode.gain.value = gainValue * (roomId === "myroom" ? 0.5 : 1);
+        gainNode.gain.value = gainValue * (roomId === "myroom" ? 1 : 1);
 
         source.connect(gainNode);
         gainNode.connect(ctx.destination);
@@ -5235,14 +5250,125 @@ const ROOM_BACK_POSITIONS = {
       return root;
     }
 
+
+    let storageArchiveDrag = null;
+    let storageArchiveFront = 0;
+    let storageArchiveLayoutWidth = 0;
+    let storageArchiveLayoutHeight = 0;
+
+    function bringStoragePhotoToFront(item) {
+      storageArchiveFront++;
+      if (storageArchiveFront > 90000) {
+        const ordered = [...storageArchiveItems].sort((a, b) =>
+          (a.stackOrder || 0) - (b.stackOrder || 0));
+        ordered.forEach((photo, index) => {
+          photo.stackOrder = index + 1;
+          photo.button.style.zIndex = String(photo.stackOrder);
+        });
+        storageArchiveFront = ordered.length + 1;
+      }
+      item.stackOrder = storageArchiveFront;
+      item.button.style.zIndex = String(item.stackOrder);
+    }
+
+    function finishStoragePhotoDrag() {
+      const drag = storageArchiveDrag;
+      if (!drag) return;
+      storageArchiveDrag = null;
+      drag.item.button.classList.remove('is-photo-dragging');
+      if (drag.moved) drag.item.suppressClickUntil = performance.now() + 600;
+      if (drag.item.button.hasPointerCapture(drag.pointerId)) {
+        drag.item.button.releasePointerCapture(drag.pointerId);
+      }
+    }
+
+    function enableStoragePhotoDrag(item) {
+      const button = item.button;
+      button.addEventListener('dragstart', event => event.preventDefault());
+      button.addEventListener('pointerdown', event => {
+        if (currentRoom !== 'storage' || storageArchiveSelected ||
+            storageArchiveDrag || event.button !== 0 || !event.isPrimary || !item.rect) return;
+        event.stopPropagation();
+        const bounds = scene.getBoundingClientRect();
+        storageArchiveDrag = {
+          item, pointerId: event.pointerId,
+          startClientX: event.clientX, startClientY: event.clientY,
+          startX: item.rect.x, startY: item.rect.y,
+          scaleX: scene.clientWidth / Math.max(1, bounds.width),
+          scaleY: scene.clientHeight / Math.max(1, bounds.height), moved: false
+        };
+        bringStoragePhotoToFront(item);
+        button.setPointerCapture(event.pointerId);
+      });
+      button.addEventListener('pointermove', event => {
+        const drag = storageArchiveDrag;
+        if (!drag || drag.item !== item || event.pointerId !== drag.pointerId) return;
+        const dx = event.clientX - drag.startClientX;
+        const dy = event.clientY - drag.startClientY;
+        if (!drag.moved && Math.hypot(dx, dy) < 5) return;
+        drag.moved = true;
+        event.preventDefault();
+        event.stopPropagation();
+        button.classList.add('is-photo-dragging');
+        const r = item.rect;
+        r.x = Math.max(0, Math.min(scene.clientWidth - r.w, drag.startX + dx * drag.scaleX));
+        r.y = Math.max(0, Math.min(scene.clientHeight - r.h, drag.startY + dy * drag.scaleY));
+        button.style.left = r.x + 'px';
+        button.style.top = r.y + 'px';
+      });
+      const end = event => {
+        if (!storageArchiveDrag || storageArchiveDrag.item !== item ||
+            event.pointerId !== storageArchiveDrag.pointerId) return;
+        event.stopPropagation();
+        finishStoragePhotoDrag();
+      };
+      button.addEventListener('pointerup', end);
+      button.addEventListener('pointercancel', end);
+      button.addEventListener('lostpointercapture', end);
+      button.addEventListener('click', event => {
+        // 드래그 직후의 자동 클릭만 막고, 키보드로 확대하는 동작은 유지합니다.
+        if (event.detail !== 0 && performance.now() < (item.suppressClickUntil || 0)) {
+          item.suppressClickUntil = 0;
+          event.preventDefault();
+          event.stopImmediatePropagation();
+        }
+      }, true);
+    }
+
     function layoutStorageArchivePhotos() {
       if (currentRoom !== 'storage' || !storageArchiveRoot || storageArchiveRoot.hidden) return;
       if (!storageArchiveItems.length) return;
-      const rects = computeStorageArchiveLayout(storageArchiveItems,scene.clientWidth,scene.clientHeight);
-      storageArchiveItems.forEach((item,index)=>{
-        item.rect = rects[index];
+      finishStoragePhotoDrag();
+      const width = scene.clientWidth;
+      const height = scene.clientHeight;
+      const initial = storageArchiveItems.some(item => !item.rect);
+      if (initial) {
+        const rects = computeStorageArchiveLayout(storageArchiveItems, width, height);
+        storageArchiveFront = storageArchiveItems.length;
+        storageArchiveItems.forEach((item, index) => {
+          item.rect = rects[index];
+          item.stackOrder = index + 1;
+        });
+      } else if (width !== storageArchiveLayoutWidth || height !== storageArchiveLayoutHeight) {
+        const ratioX = width / Math.max(1, storageArchiveLayoutWidth);
+        const ratioY = height / Math.max(1, storageArchiveLayoutHeight);
+        storageArchiveItems.forEach(item => {
+          const r = item.rect;
+          const fit = Math.min(1, width / r.w, height / r.h);
+          r.w *= fit;
+          r.h *= fit;
+          r.x = Math.max(0, Math.min(width - r.w, r.x * ratioX));
+          r.y = Math.max(0, Math.min(height - r.h, r.y * ratioY));
+        });
+      }
+      storageArchiveLayoutWidth = width;
+      storageArchiveLayoutHeight = height;
+      storageArchiveItems.forEach(item => {
         const r = item.rect;
-        Object.assign(item.button.style,{left:r.x+'px',top:r.y+'px',width:r.w+'px',height:r.h+'px',zIndex:String(index+1)});
+        Object.assign(item.button.style, {
+          left: r.x + 'px', top: r.y + 'px', width: r.w + 'px', height: r.h + 'px',
+          zIndex: String(item.stackOrder)
+        });
       });
       fitStorageArchiveExpandedPhoto();
     }
@@ -5284,6 +5410,7 @@ const ROOM_BACK_POSITIONS = {
     }
 
     async function renderStoragePhotoArchive(roomId) {
+      finishStoragePhotoDrag();
       const request = ++storageArchiveRequest;
       scene.classList.toggle('has-storage-archive',roomId==='storage');
       closeStorageArchivePhoto(false);
@@ -5319,6 +5446,7 @@ const ROOM_BACK_POSITIONS = {
         button.appendChild(image);
         item.button=button;
         item.preferredWidth=STORAGE_ARCHIVE_OPTIONS.minWidth+Math.random()*(STORAGE_ARCHIVE_OPTIONS.maxWidth-STORAGE_ARCHIVE_OPTIONS.minWidth);
+        enableStoragePhotoDrag(item);
         button.addEventListener('click',()=>openStorageArchivePhoto(item));
         root.querySelector('.storage-photo-items').appendChild(button);
         return item;
@@ -5784,6 +5912,88 @@ document.addEventListener(
 }
 
 
+
+    // 전시용 자체 두벌식 입력: macOS ABC + 물리 QWERTY 키보드 기준.
+    const exhibitionDubeol = (() => {
+      const L = Array.from('ㄱㄲㄴㄷㄸㄹㅁㅂㅃㅅㅆㅇㅈㅉㅊㅋㅌㅍㅎ');
+      const V = Array.from('ㅏㅐㅑㅒㅓㅔㅕㅖㅗㅘㅙㅚㅛㅜㅝㅞㅟㅠㅡㅢㅣ');
+      const T = ['', ...Array.from('ㄱㄲㄳㄴㄵㄶㄷㄹㄺㄻㄼㄽㄾㄿㅀㅁㅂㅄㅅㅆㅇㅈㅊㅋㅌㅍㅎ')];
+      const pairV = {'ㅗㅏ':'ㅘ','ㅗㅐ':'ㅙ','ㅗㅣ':'ㅚ','ㅜㅓ':'ㅝ','ㅜㅔ':'ㅞ','ㅜㅣ':'ㅟ','ㅡㅣ':'ㅢ'};
+      const pairT = {'ㄱㅅ':'ㄳ','ㄴㅈ':'ㄵ','ㄴㅎ':'ㄶ','ㄹㄱ':'ㄺ','ㄹㅁ':'ㄻ','ㄹㅂ':'ㄼ','ㄹㅅ':'ㄽ','ㄹㅌ':'ㄾ','ㄹㅍ':'ㄿ','ㄹㅎ':'ㅀ','ㅂㅅ':'ㅄ'};
+      const splitT = Object.fromEntries(Object.entries(pairT).map(([k,v]) => [v, Array.from(k)]));
+      const keys = Object.fromEntries(Array.from('rsefaqtdwczxvgkoi jpu h y n b m l'.replace(/ /g,''))
+        .map((key,i) => [key, Array.from('ㄱㄴㄷㄹㅁㅂㅅㅇㅈㅊㅋㅌㅍㅎㅏㅐㅑㅓㅔㅕㅗㅛㅜㅠㅡㅣ')[i]]));
+      const shifted = {r:'ㄲ',e:'ㄸ',q:'ㅃ',t:'ㅆ',w:'ㅉ',o:'ㅒ',p:'ㅖ'};
+      let run = null;
+      function syllable(l,v,t='') {
+        return String.fromCharCode(0xAC00 + (L.indexOf(l)*21 + V.indexOf(v))*28 + T.indexOf(t));
+      }
+      function append(text,j) {
+        if (!text) return j;
+        const a = text.slice(-1), head = text.slice(0,-1), code = a.charCodeAt(0)-0xAC00;
+        if (code < 0 || code > 11171) {
+          if (L.includes(a) && V.includes(j)) return head + syllable(a,j);
+          if (pairV[a+j]) return head + pairV[a+j];
+          return text+j;
+        }
+        const l=L[Math.floor(code/588)], v=V[Math.floor(code/28)%21], t=T[code%28];
+        if (V.includes(j)) {
+          if (!t) return pairV[v+j] ? head+syllable(l,pairV[v+j]) : text+j;
+          const parts=splitT[t] || ['',t];
+          return head+syllable(l,v,parts[0])+syllable(parts[1],j);
+        }
+        if (!t && T.includes(j)) return head+syllable(l,v,j);
+        if (pairT[t+j]) return head+syllable(l,v,pairT[t+j]);
+        return text+j;
+      }
+      function compose(input) { return input.reduce(append,''); }
+      function commit() { run=null; }
+      function validRun() {
+        return run && run.room===currentRoom && run.value===imeInput.value &&
+          imeInput.selectionStart===run.end && imeInput.selectionEnd===run.end;
+      }
+      function publish() {
+        const value=compose(run.keys);
+        imeInput.value=run.before+value+run.after;
+        run.end=run.before.length+value.length;
+        run.value=imeInput.value;
+        imeInput.setSelectionRange(run.end,run.end);
+        composing=false;
+        syncJamoImages();
+      }
+      imeInput.addEventListener('keydown', event => {
+        if (!rooms[currentRoom].typing || previewDialog.open || mailDialog.open || keypadDialog.open) return;
+        if (event.isComposing || event.key==='Process') { commit(); return; }
+        if (event.metaKey || event.ctrlKey || event.altKey) { commit(); return; }
+        if (event.code==='Backspace' && validRun() && run.keys.length) {
+          event.preventDefault(); event.stopImmediatePropagation();
+          run.keys.pop(); publish();
+          if (!run.keys.length) commit();
+          return;
+        }
+        if (/^Key[A-Z]$/.test(event.code)) {
+          const key=event.code.slice(3).toLowerCase();
+          const j=(event.shiftKey && shifted[key]) || keys[key];
+          if (!j) return;
+          event.preventDefault(); event.stopImmediatePropagation();
+          if (!validRun()) run={room:currentRoom, before:imeInput.value.slice(0,imeInput.selectionStart),
+            after:imeInput.value.slice(imeInput.selectionEnd), keys:[]};
+          run.keys.push(j); publish(); return;
+        }
+        commit();
+      }, true);
+      imeInput.addEventListener('blur',commit);
+      imeInput.addEventListener('pointerdown',commit);
+      imeInput.addEventListener('paste',event => {
+        if (!rooms[currentRoom].typing || mailDialog.open || previewDialog.open) return;
+        event.preventDefault(); commit();
+        const text=filterHangul(event.clipboardData.getData('text/plain'));
+        imeInput.setRangeText(text,imeInput.selectionStart,imeInput.selectionEnd,'end');
+        composing=false; syncJamoImages();
+      });
+      return {compose,keys,shifted,commit};
+    })();
+
     imeInput.addEventListener("compositionstart", () => {
       composing = true;
     });
@@ -5999,7 +6209,7 @@ window.typingMp3 = (() => {
     if (!audioUnlocked || (roomId === 'kitchen' && !wordStart)) return [];
     const events = [];
     const rate = roomId === 'living' ? 2 : 1;
-    const gain = roomId === 'myroom' ? 0.5 : roomId === 'closet' ? CLOSET_SOUND_GAIN : 1;
+    const gain = roomId === 'myroom' ? 1 : roomId === 'closet' ? CLOSET_SOUND_GAIN : 1;
     const cutoff = roomId === 'closet' ? CLOSET_SOUND_CUTOFF : null;
     function add(src, delay, volume) {
       if (src) events.push({src,time:time + delay,gain:volume * gain,rate,cutoff});
